@@ -9,12 +9,13 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "http"
+    "http",
+    "websocket_api"
   ],
   "documentation": "https://github.com/PXLJAKE/ha-pellet-stock",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/PXLJAKE/ha-pellet-stock/issues",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

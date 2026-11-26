@@ -28,6 +28,12 @@ All notable changes are listed here. The format follows
   manual resource): silo graphic with fill level, stock, range with "Why?",
   key figures, delivery history and an "Add delivery" form. Visual editor,
   light/dark theme, phone to desktop. About 5 KB gzipped, no dependencies.
+- Analysis popup: tap the card to open overview, months, weeks and
+  deliveries. Bar charts for consumption or cost per month (tap a month for
+  its days) and for the last 26 weeks (tap a week for its days), with
+  tooltips, tables and yearly totals. Optional 12-month chart in the card.
+  Data comes on demand over the WebSocket command `pellet_stock/data`, so
+  no history is stored in the recorder. The card is about 13 KB gzipped.
 - Plain-language "reason" attributes (German/English) for range, minimum stock
   and every decision about the consumption sensor.
 - Project scaffold: integration skeleton with a setup assistant (name only),

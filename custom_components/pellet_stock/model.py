@@ -75,6 +75,8 @@ class StockModel:
     total_consumed_kg: float = 0.0
     tracking_since: str = ""  # ISO datetime
     daily_kg: dict[str, float] = field(default_factory=dict)
+    daily_cost: dict[str, float] = field(default_factory=dict)
+    kg_by_month: dict[str, float] = field(default_factory=dict)  # kept forever (small)
     cost_by_month: dict[str, float] = field(default_factory=dict)
     cost_by_year: dict[str, float] = field(default_factory=dict)
     deliveries: list[Delivery] = field(default_factory=list)
@@ -96,6 +98,8 @@ class StockModel:
         cost = kg * self.avg_price_per_kg
         month = key[:7]
         year = key[:4]
+        self.daily_cost[key] = self.daily_cost.get(key, 0.0) + cost
+        self.kg_by_month[month] = self.kg_by_month.get(month, 0.0) + kg
         self.cost_by_month[month] = self.cost_by_month.get(month, 0.0) + cost
         self.cost_by_year[year] = self.cost_by_year.get(year, 0.0) + cost
 
@@ -155,6 +159,7 @@ class StockModel:
         """Drop daily values older than keep_days."""
         cutoff = (today - timedelta(days=keep_days)).isoformat()
         self.daily_kg = {k: v for k, v in self.daily_kg.items() if k >= cutoff}
+        self.daily_cost = {k: v for k, v in self.daily_cost.items() if k >= cutoff}
 
     # ----- values -----
 
@@ -210,12 +215,23 @@ class StockModel:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> StockModel:
         """Restore from the HA store."""
+        model = cls._from_dict(data)
+        if "kg_by_month" not in data:
+            # Data from before monthly totals existed: rebuild from the days.
+            for day, kg in model.daily_kg.items():
+                model.kg_by_month[day[:7]] = model.kg_by_month.get(day[:7], 0.0) + kg
+        return model
+
+    @classmethod
+    def _from_dict(cls, data: dict[str, Any]) -> StockModel:
         return cls(
             stock_kg=float(data.get("stock_kg", 0.0)),
             avg_price_per_kg=float(data.get("avg_price_per_kg", 0.0)),
             total_consumed_kg=float(data.get("total_consumed_kg", 0.0)),
             tracking_since=data.get("tracking_since", ""),
             daily_kg=dict(data.get("daily_kg", {})),
+            daily_cost=dict(data.get("daily_cost", {})),
+            kg_by_month=dict(data.get("kg_by_month", {})),
             cost_by_month=dict(data.get("cost_by_month", {})),
             cost_by_year=dict(data.get("cost_by_year", {})),
             deliveries=[Delivery(**d) for d in data.get("deliveries", [])],
@@ -223,3 +239,67 @@ class StockModel:
             runtime_on_since=data.get("runtime_on_since"),
             source_key=data.get("source_key", ""),
         )
+
+    # ----- analysis -----
+
+    def months(self) -> list[dict[str, Any]]:
+        """Return all months with consumption and cost, oldest first."""
+        keys = sorted(set(self.kg_by_month) | set(self.cost_by_month))
+        return [
+            {
+                "period": k,
+                "kg": round(self.kg_by_month.get(k, 0.0), 2),
+                "cost": round(self.cost_by_month.get(k, 0.0), 2),
+            }
+            for k in keys
+        ]
+
+    def years(self) -> list[dict[str, Any]]:
+        """Return all years with consumption and cost, oldest first."""
+        totals: dict[str, list[float]] = {}
+        for m in self.months():
+            t = totals.setdefault(m["period"][:4], [0.0, 0.0])
+            t[0] += m["kg"]
+            t[1] += m["cost"]
+        return [
+            {"period": y, "kg": round(kg, 2), "cost": round(cost, 2)}
+            for y, (kg, cost) in sorted(totals.items())
+        ]
+
+    def days_of_month(self, month: str) -> list[dict[str, Any]]:
+        """Return the stored days of one month ("YYYY-MM")."""
+        return [
+            {
+                "period": k,
+                "kg": round(v, 2),
+                "cost": round(self.daily_cost.get(k, 0.0), 2),
+            }
+            for k, v in sorted(self.daily_kg.items())
+            if k.startswith(month)
+        ]
+
+    def weeks(self, today: date, count: int) -> list[dict[str, Any]]:
+        """Return the last `count` ISO weeks (Monday to Sunday), oldest first."""
+        monday = today - timedelta(days=today.weekday())
+        result = []
+        for i in range(count - 1, -1, -1):
+            start = monday - timedelta(weeks=i)
+            days = [(start + timedelta(days=d)).isoformat() for d in range(7)]
+            iso = start.isocalendar()
+            result.append(
+                {
+                    "period": f"{iso.year}-W{iso.week:02d}",
+                    "start": start.isoformat(),
+                    "kg": round(sum(self.daily_kg.get(d, 0.0) for d in days), 2),
+                    "cost": round(sum(self.daily_cost.get(d, 0.0) for d in days), 2),
+                    "days": [
+                        {
+                            "period": d,
+                            "kg": round(self.daily_kg.get(d, 0.0), 2),
+                            "cost": round(self.daily_cost.get(d, 0.0), 2),
+                        }
+                        for d in days
+                    ],
+                }
+            )
+        return result

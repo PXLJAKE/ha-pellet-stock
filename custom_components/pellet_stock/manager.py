@@ -401,6 +401,63 @@ class PelletStockManager:
         self.model.prune(now.date(), HISTORY_DAYS)
         self._changed()
 
+    # ----- analysis for the dashboard card -----
+
+    def export(self, month: str | None = None) -> dict[str, Any]:
+        """Return everything the card and its popup show, in one answer.
+
+        Sent over the WebSocket API on demand, so the history never has to be
+        stored as state attributes in the recorder database.
+        """
+        now = dt_util.now()
+        est = self.estimate()
+        model = self.model
+        data: dict[str, Any] = {
+            "name": self.entry.title,
+            "entry_id": self.entry.entry_id,
+            "currency": self.hass.config.currency,
+            "calorific_value": self.calorific_value,
+            "kpis": {
+                "stock_kg": round(model.stock_kg, 1),
+                "capacity_kg": self.capacity_kg,
+                "min_stock_kg": round(self.min_stock_kg, 1),
+                "low_stock": self.low_stock,
+                "range_days": None if est.days is None else round(est.days, 1),
+                "range_reason": self.range_reason(),
+                "avg_kg_per_day": None
+                if est.avg_kg_per_day is None
+                else round(est.avg_kg_per_day, 2),
+                "today_kg": round(model.consumed_on(now.date()), 2),
+                "month_kg": round(model.kg_by_month.get(now.strftime("%Y-%m"), 0.0), 2),
+                "month_cost": round(self.cost_this_month(), 2),
+                "year_cost": round(self.cost_this_year(), 2),
+                "total_kg": round(model.total_consumed_kg, 1),
+                "price_per_tonne": round(model.avg_price_per_kg * 1000, 2)
+                if model.avg_price_per_kg > 0
+                else None,
+                "price_per_kwh": None
+                if (p := self.price_per_kwh()) is None
+                else round(p, 5),
+                "tracking_since": model.tracking_since,
+            },
+            "months": model.months(),
+            "years": model.years(),
+            "weeks": model.weeks(now.date(), 26),
+            "deliveries": [
+                {
+                    "id": d.id,
+                    "date": d.date,
+                    "kg": d.kg,
+                    "price": d.price_total,
+                    "note": d.note,
+                }
+                for d in reversed(model.deliveries)
+            ],
+        }
+        if month:
+            data["days"] = model.days_of_month(month)
+        return data
+
     # ----- derived values -----
 
     def estimate(self) -> RangeEstimate:

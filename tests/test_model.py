@@ -140,3 +140,30 @@ def test_remove_delivery() -> None:
     assert m.stock_kg == 1000
     assert m.avg_price_per_kg == pytest.approx(0.30)
     assert m.last_delivery is None
+
+
+def test_analysis_months_years_days_weeks() -> None:
+    """Months, years, days of a month and weeks add up the booked consumption."""
+    m = StockModel(stock_kg=1000, avg_price_per_kg=0.5)
+    m.consume(10, datetime(2025, 12, 31, 12))
+    m.consume(4, datetime(2026, 1, 1, 8))
+    m.consume(6, datetime(2026, 1, 2, 8))
+    assert m.months() == [
+        {"period": "2025-12", "kg": 10.0, "cost": 5.0},
+        {"period": "2026-01", "kg": 10.0, "cost": 5.0},
+    ]
+    assert m.years() == [
+        {"period": "2025", "kg": 10.0, "cost": 5.0},
+        {"period": "2026", "kg": 10.0, "cost": 5.0},
+    ]
+    assert [d["period"] for d in m.days_of_month("2026-01")] == [
+        "2026-01-01",
+        "2026-01-02",
+    ]
+    weeks = m.weeks(date(2026, 1, 2), 2)
+    assert [w["period"] for w in weeks] == ["2025-W52", "2026-W01"]
+    # Week 1 of 2026 runs from Monday 29 Dec 2025 to Sunday 4 Jan 2026.
+    assert weeks[1]["start"] == "2025-12-29"
+    assert weeks[1]["kg"] == 20.0
+    assert len(weeks[1]["days"]) == 7
+    assert weeks[1]["days"][2] == {"period": "2025-12-31", "kg": 10.0, "cost": 5.0}
