@@ -3,17 +3,229 @@
     "step": {
       "user": {
         "title": "Pelletlager hinzufügen",
-        "description": "Jedes Pelletlager (Silo, Bunker, Sacklager) bekommt einen eigenen Eintrag. Du kannst beliebig viele anlegen.",
+        "description": "Jedes Lager (Silo, Bunker, Sacklager) bekommt einen eigenen Eintrag. Du kannst beliebig viele anlegen.",
         "data": {
-          "name": "Name"
+          "name": "Name",
+          "source_type": "Woher kommt der Verbrauch?"
         },
         "data_description": {
-          "name": "Wird als Gerätename angezeigt, z. B. „Pelletsilo“."
+          "name": "Wird als Gerätename angezeigt, z. B. „Pelletsilo“.",
+          "source_type": "Wähle, was deine Heizung schon in Home Assistant meldet. Du kannst das später ändern."
+        }
+      },
+      "source_kg_counter": {
+        "title": "Verbrauch aus einem kg-Sensor",
+        "description": "Wähle einen Sensor, der verbrauchte Pellets in kg zählt. Ein Gesamtzähler und ein Tageszähler, der um Mitternacht auf 0 springt, funktionieren beide.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Heizwert",
+          "max_step_kg": "Größter plausibler Schritt"
+        },
+        "data_description": {
+          "source_entity": "Z. B. der Tagesverbrauch deiner Kessel-Integration.",
+          "calorific_value": "Energie in einem Kilo Pellets. 4,8 kWh/kg ist typisch für ENplus-A1-Pellets, genauer steht es oft auf dem Lieferschein. Wird für den Energie-Sensor und den Preis pro kWh genutzt.",
+          "max_step_kg": "Größere Sprünge zwischen zwei Sensorwerten werden ignoriert, z. B. nach einem Neustart oder Messfehler. 10 kg passt für die meisten Kessel."
+        }
+      },
+      "source_energy_counter": {
+        "title": "Verbrauch aus einem Energie-Sensor",
+        "description": "Wähle einen Sensor, der Energie in kWh zählt. Die Pellets werden als Energie geteilt durch Heizwert berechnet.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Heizwert",
+          "efficiency": "Kesselwirkungsgrad",
+          "max_step_kg": "Größter plausibler Schritt"
+        },
+        "data_description": {
+          "source_entity": "Ein kWh-Zähler deines Kessels oder Wärmemengenzählers.",
+          "calorific_value": "Energie in einem Kilo Pellets. 4,8 kWh/kg ist typisch für ENplus-A1-Pellets, genauer steht es oft auf dem Lieferschein. Wird für den Energie-Sensor und den Preis pro kWh genutzt.",
+          "max_step_kg": "Größere Sprünge zwischen zwei Sensorwerten werden ignoriert, z. B. nach einem Neustart oder Messfehler. 10 kg passt für die meisten Kessel.",
+          "efficiency": "Lass 100 %, wenn der Sensor die Energie in den Pellets zählt (wie die meisten Kessel). Misst er die abgegebene Wärme, trag den Kesselwirkungsgrad ein, z. B. 90 %."
+        }
+      },
+      "source_runtime": {
+        "title": "Verbrauch aus der Brennerlaufzeit",
+        "description": "Wähle, woran man sieht, dass der Brenner läuft: eine Ein/Aus-Entität oder einen Sensor mit Betriebsstunden. Pellets = Laufzeit mal kg pro Stunde.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Heizwert",
+          "kg_per_hour": "Pellets pro Brennerstunde",
+          "max_step_kg": "Größter plausibler Schritt"
+        },
+        "data_description": {
+          "source_entity": "Ein/Aus-Entität (an = Brenner läuft) oder ein Betriebsstundenzähler.",
+          "calorific_value": "Energie in einem Kilo Pellets. 4,8 kWh/kg ist typisch für ENplus-A1-Pellets, genauer steht es oft auf dem Lieferschein. Wird für den Energie-Sensor und den Preis pro kWh genutzt.",
+          "max_step_kg": "Größere Sprünge zwischen zwei Sensorwerten werden ignoriert, z. B. nach einem Neustart oder Messfehler. 10 kg passt für die meisten Kessel.",
+          "kg_per_hour": "Wie viele kg der Brenner pro Stunde bei üblicher Leistung braucht. Steht im Handbuch (Brennstoffverbrauch bei Nennlast) oder lässt sich aus einer Lieferung ausrechnen."
+        }
+      },
+      "storage": {
+        "title": "Dein Lager",
+        "description": "Sag dem Assistenten, wie groß das Lager ist und wann du gewarnt werden willst.",
+        "data": {
+          "capacity_kg": "Lagergröße",
+          "min_stock_percent": "Mindestbestand",
+          "level_entity": "Füllstands- oder Waagensensor (optional)"
+        },
+        "data_description": {
+          "capacity_kg": "Wie viele kg ins volle Lager passen.",
+          "min_stock_percent": "Unter diesem Anteil der Lagergröße gibt es eine Warnung und der Sensor „Mindestbestand erreicht“ geht an. 10 % lassen genug Zeit zum Bestellen.",
+          "level_entity": "Ein Sensor, der misst, was wirklich im Lager ist (Waage, Ultraschall, Radar; kg oder %). Er wird nur mit dem berechneten Bestand verglichen, übernehmen kannst du ihn per Knopf. Leer lassen, wenn du keinen hast."
+        }
+      },
+      "start": {
+        "title": "Startwerte",
+        "description": "Was liegt heute im Lager? Ab jetzt wird der Verbrauch automatisch abgezogen und Lieferungen werden dazugezählt.",
+        "data": {
+          "initial_stock_kg": "Aktueller Bestand",
+          "initial_price_per_tonne": "Preis pro Tonne"
+        },
+        "data_description": {
+          "initial_stock_kg": "Deine beste Schätzung. Mit Füllstandssensor wird dessen Wert vorgeschlagen. Du kannst ihn später korrigieren.",
+          "initial_price_per_tonne": "Was du für diese Pellets bezahlt hast, inklusive Lieferung. Wird für Kosten und Preis pro kWh genutzt. 0 = unbekannt."
         }
       }
     },
     "abort": {
       "already_configured": "Ein Lager mit diesem Namen gibt es schon."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Einstellungen",
+        "description": "Bestand, Lieferungen und Verlauf bleiben erhalten, wenn du Einstellungen änderst.",
+        "data": {
+          "source_type": "Woher kommt der Verbrauch?"
+        },
+        "data_description": {
+          "source_type": "Wähle, was deine Heizung schon in Home Assistant meldet. Du kannst das später ändern."
+        }
+      },
+      "source_kg_counter": {
+        "title": "Verbrauch aus einem kg-Sensor",
+        "description": "Wähle einen Sensor, der verbrauchte Pellets in kg zählt. Ein Gesamtzähler und ein Tageszähler, der um Mitternacht auf 0 springt, funktionieren beide.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Heizwert",
+          "max_step_kg": "Größter plausibler Schritt"
+        },
+        "data_description": {
+          "source_entity": "Z. B. der Tagesverbrauch deiner Kessel-Integration.",
+          "calorific_value": "Energie in einem Kilo Pellets. 4,8 kWh/kg ist typisch für ENplus-A1-Pellets, genauer steht es oft auf dem Lieferschein. Wird für den Energie-Sensor und den Preis pro kWh genutzt.",
+          "max_step_kg": "Größere Sprünge zwischen zwei Sensorwerten werden ignoriert, z. B. nach einem Neustart oder Messfehler. 10 kg passt für die meisten Kessel."
+        }
+      },
+      "source_energy_counter": {
+        "title": "Verbrauch aus einem Energie-Sensor",
+        "description": "Wähle einen Sensor, der Energie in kWh zählt. Die Pellets werden als Energie geteilt durch Heizwert berechnet.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Heizwert",
+          "efficiency": "Kesselwirkungsgrad",
+          "max_step_kg": "Größter plausibler Schritt"
+        },
+        "data_description": {
+          "source_entity": "Ein kWh-Zähler deines Kessels oder Wärmemengenzählers.",
+          "calorific_value": "Energie in einem Kilo Pellets. 4,8 kWh/kg ist typisch für ENplus-A1-Pellets, genauer steht es oft auf dem Lieferschein. Wird für den Energie-Sensor und den Preis pro kWh genutzt.",
+          "max_step_kg": "Größere Sprünge zwischen zwei Sensorwerten werden ignoriert, z. B. nach einem Neustart oder Messfehler. 10 kg passt für die meisten Kessel.",
+          "efficiency": "Lass 100 %, wenn der Sensor die Energie in den Pellets zählt (wie die meisten Kessel). Misst er die abgegebene Wärme, trag den Kesselwirkungsgrad ein, z. B. 90 %."
+        }
+      },
+      "source_runtime": {
+        "title": "Verbrauch aus der Brennerlaufzeit",
+        "description": "Wähle, woran man sieht, dass der Brenner läuft: eine Ein/Aus-Entität oder einen Sensor mit Betriebsstunden. Pellets = Laufzeit mal kg pro Stunde.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Heizwert",
+          "kg_per_hour": "Pellets pro Brennerstunde",
+          "max_step_kg": "Größter plausibler Schritt"
+        },
+        "data_description": {
+          "source_entity": "Ein/Aus-Entität (an = Brenner läuft) oder ein Betriebsstundenzähler.",
+          "calorific_value": "Energie in einem Kilo Pellets. 4,8 kWh/kg ist typisch für ENplus-A1-Pellets, genauer steht es oft auf dem Lieferschein. Wird für den Energie-Sensor und den Preis pro kWh genutzt.",
+          "max_step_kg": "Größere Sprünge zwischen zwei Sensorwerten werden ignoriert, z. B. nach einem Neustart oder Messfehler. 10 kg passt für die meisten Kessel.",
+          "kg_per_hour": "Wie viele kg der Brenner pro Stunde bei üblicher Leistung braucht. Steht im Handbuch (Brennstoffverbrauch bei Nennlast) oder lässt sich aus einer Lieferung ausrechnen."
+        }
+      },
+      "storage": {
+        "title": "Dein Lager",
+        "description": "Sag dem Assistenten, wie groß das Lager ist und wann du gewarnt werden willst.",
+        "data": {
+          "capacity_kg": "Lagergröße",
+          "min_stock_percent": "Mindestbestand",
+          "level_entity": "Füllstands- oder Waagensensor (optional)"
+        },
+        "data_description": {
+          "capacity_kg": "Wie viele kg ins volle Lager passen.",
+          "min_stock_percent": "Unter diesem Anteil der Lagergröße gibt es eine Warnung und der Sensor „Mindestbestand erreicht“ geht an. 10 % lassen genug Zeit zum Bestellen.",
+          "level_entity": "Ein Sensor, der misst, was wirklich im Lager ist (Waage, Ultraschall, Radar; kg oder %). Er wird nur mit dem berechneten Bestand verglichen, übernehmen kannst du ihn per Knopf. Leer lassen, wenn du keinen hast."
+        }
+      }
+    }
+  },
+  "selector": {
+    "source_type": {
+      "options": {
+        "kg_counter": "Ein Sensor zählt Pellets in kg",
+        "energy_counter": "Ein Sensor zählt Energie in kWh",
+        "runtime": "Brennerlaufzeit"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "low_stock": {
+        "name": "Mindestbestand erreicht"
+      }
+    },
+    "button": {
+      "adopt_level": {
+        "name": "Gemessenen Füllstand übernehmen"
+      }
+    },
+    "sensor": {
+      "stock": {
+        "name": "Bestand"
+      },
+      "fill_level": {
+        "name": "Füllgrad"
+      },
+      "range": {
+        "name": "Reichweite"
+      },
+      "avg_daily_consumption": {
+        "name": "Durchschnittlicher Tagesverbrauch"
+      },
+      "consumption_today": {
+        "name": "Verbrauch heute"
+      },
+      "consumption_total": {
+        "name": "Gesamtverbrauch"
+      },
+      "energy_total": {
+        "name": "Energie"
+      },
+      "price_per_kwh": {
+        "name": "Preis pro kWh"
+      },
+      "price_per_tonne": {
+        "name": "Durchschnittspreis pro Tonne"
+      },
+      "cost_month": {
+        "name": "Kosten diesen Monat"
+      },
+      "cost_year": {
+        "name": "Kosten dieses Jahr"
+      },
+      "level_deviation": {
+        "name": "Abweichung zum Messwert"
+      }
+    }
+  },
+  "exceptions": {
+    "level_unavailable": {
+      "message": "Der Füllstandssensor hat gerade keinen gültigen Wert."
     }
   }
 }

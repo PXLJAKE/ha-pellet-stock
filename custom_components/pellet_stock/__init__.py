@@ -6,30 +6,25 @@ independent of the boiler manufacturer.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-# Platforms are added step by step in the MVP pull requests.
-PLATFORMS: list[Platform] = []
+from .manager import PelletStockManager
 
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
 
-@dataclass(slots=True)
-class PelletStockData:
-    """Runtime data for one pellet storage."""
-
-    name: str
-
-
-type PelletStockConfigEntry = ConfigEntry[PelletStockData]
+type PelletStockConfigEntry = ConfigEntry[PelletStockManager]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: PelletStockConfigEntry) -> bool:
     """Set up one pellet storage from a config entry."""
-    entry.runtime_data = PelletStockData(name=entry.title)
+    manager = PelletStockManager(hass, entry)
+    await manager.async_load()
+    entry.runtime_data = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    manager.async_start()
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 
 
@@ -37,4 +32,22 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: PelletStockConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        await entry.runtime_data.async_stop()
+    return unloaded
+
+
+async def async_remove_entry(
+    hass: HomeAssistant, entry: PelletStockConfigEntry
+) -> None:
+    """Delete stored data when the storage is removed."""
+    manager = PelletStockManager(hass, entry)
+    await manager.async_remove_store()
+
+
+async def _async_options_updated(
+    hass: HomeAssistant, entry: PelletStockConfigEntry
+) -> None:
+    """Reload when the settings change."""
+    await hass.config_entries.async_reload(entry.entry_id)
