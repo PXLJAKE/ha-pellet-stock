@@ -16,6 +16,7 @@ Pellet Stock Manager keeps track of your wood pellet storage in Home Assistant. 
   - Cost per month and per year.
   - Price per kWh for the Energy dashboard.
 - **Deliveries.** You can enter deliveries from the card or with an action, and correct or delete wrong entries.
+- **History from day one.** Past daily consumption can be taken over from the long-term statistics Home Assistant already keeps for your sensor, so the charts and the range work right after setup.
 - **Low stock warning.** A binary sensor and the event `pellet_stock_low_stock` let you build your own notifications.
 - **Fill level or scale (optional).** A measured or calculated level is compared with the stock, and one button press takes it over.
 - **Dashboard card** (included, no extra resource to add):
@@ -65,6 +66,7 @@ Go to **Settings → Devices & services → Add integration** and choose **Pelle
 4. **Start values.**
    - The current stock, suggested from the fill level sensor if you have one.
    - The price per tonne.
+   - Whether to take over the history from the Home Assistant statistics (on by default for sensors).
 
 You can change everything later under **Configure**, and stock and history are kept. Each storage gets its own entry, so you can add as many as you need.
 
@@ -94,6 +96,7 @@ You can change everything later under **Configure**, and stock and history are k
 | `pellet_stock.add_delivery` | `config_entry_id`, `kg`, `price` (total, optional), `date` (optional), `note` (optional) |
 | `pellet_stock.correct_stock` | `config_entry_id`, `stock_kg` |
 | `pellet_stock.delete_delivery` | `config_entry_id`, `delivery_id` (from the attributes of *Last delivery*) |
+| `pellet_stock.import_history` | `config_entry_id`. Takes over past daily consumption from the statistics, once per storage |
 
 Each action returns a response, for example the new stock.
 

@@ -65,6 +65,7 @@ from .const import (
     SOURCE_RUNTIME,
     STORAGE_VERSION,
 )
+from .history_import import ImportResult, async_import_history
 from .model import Delivery, RangeEstimate, StockModel
 
 _LOGGER = logging.getLogger(__name__)
@@ -327,7 +328,10 @@ class PelletStockManager:
             value = float(state.state)
         except ValueError:
             return None
-        unit = state.attributes.get("unit_of_measurement")
+        return self.value_to_kg(value, state.attributes.get("unit_of_measurement"))
+
+    def value_to_kg(self, value: float, unit: str | None) -> float:
+        """Convert a value of the source sensor into kg of pellets."""
         if self.source_type == SOURCE_ENERGY:
             kwh = value * _ENERGY_TO_KWH.get(unit, 1.0)
             efficiency = float(self.config.get(CONF_EFFICIENCY, DEFAULT_EFFICIENCY))
@@ -403,6 +407,27 @@ class PelletStockManager:
         await self._store.async_save(self.model.to_dict())
         return diff
 
+    # ----- history from the HA statistics -----
+
+    async def async_import_history(self) -> ImportResult:
+        """Fill the history once from the long-term statistics of the source."""
+        result = await async_import_history(self)
+        now = dt_util.now()
+        if result.status == "imported":
+            self._decide(
+                "history_imported",
+                now,
+                days=result.days,
+                kg=result.kg,
+                price=self.model.avg_price_per_kg * 1000,
+            )
+            self._changed(save=False)
+            await self._store.async_save(self.model.to_dict())
+        elif result.status != "already_imported":
+            self._decide(f"history_{result.status}", now)
+            self._changed(save=False)
+        return result
+
     # ----- midnight -----
 
     @callback
@@ -448,6 +473,7 @@ class PelletStockManager:
                 if (p := self.price_per_kwh()) is None
                 else round(p, 5),
                 "tracking_since": model.tracking_since,
+                "history_from": model.history_from or None,
             },
             "months": model.months(),
             "years": model.years(),

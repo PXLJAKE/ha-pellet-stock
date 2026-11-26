@@ -78,11 +78,13 @@
         "description": "Was liegt heute im Lager? Ab jetzt wird der Verbrauch automatisch abgezogen und Lieferungen werden dazugezählt.",
         "data": {
           "initial_stock_kg": "Aktueller Bestand",
-          "initial_price_per_tonne": "Preis pro Tonne"
+          "initial_price_per_tonne": "Preis pro Tonne",
+          "import_history": "Verlauf aus Home Assistant übernehmen"
         },
         "data_description": {
           "initial_stock_kg": "Deine beste Schätzung. Mit Füllstandssensor wird dessen Wert vorgeschlagen. Du kannst ihn später korrigieren.",
-          "initial_price_per_tonne": "Was du für diese Pellets bezahlt hast, inklusive Lieferung. Wird für Kosten und Preis pro kWh genutzt. 0 = unbekannt."
+          "initial_price_per_tonne": "Was du für diese Pellets bezahlt hast, inklusive Lieferung. Wird für Kosten und Preis pro kWh genutzt. 0 = unbekannt.",
+          "import_history": "Liest den bisherigen Tagesverbrauch aus der Langzeitstatistik des Sensors, damit die Diagramme ab dem ersten Tag gefüllt sind. Der Bestand wird nicht verändert. Die Kosten dieser Tage werden mit dem Preis oben gerechnet."
         }
       }
     },
@@ -238,6 +240,9 @@
     },
     "unknown_delivery": {
       "message": "Keine Lieferung mit dieser ID. Die IDs stehen in den Attributen des Sensors „Letzte Lieferung“."
+    },
+    "history_already_imported": {
+      "message": "Der Verlauf wurde schon übernommen (ab {first_day})."
     }
   },
   "services": {
@@ -292,6 +297,16 @@
         "delivery_id": {
           "name": "Lieferungs-ID",
           "description": "ID aus den Attributen des Sensors „Letzte Lieferung“."
+        }
+      }
+    },
+    "import_history": {
+      "name": "Verlauf übernehmen",
+      "description": "Füllt den Verlauf einmalig mit dem bisherigen Tagesverbrauch aus der Langzeitstatistik des Quellsensors. Der Bestand wird nicht verändert.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Lager",
+          "description": "Das Pelletlager, das gefüllt werden soll."
         }
       }
     }

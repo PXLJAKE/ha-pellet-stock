@@ -64,6 +64,9 @@
     },
     "delete_delivery": {
       "service": "mdi:delete"
+    },
+    "import_history": {
+      "service": "mdi:history"
     }
   }
 }

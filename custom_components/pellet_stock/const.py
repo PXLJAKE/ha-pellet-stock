@@ -20,6 +20,7 @@ CONF_MIN_STOCK_PERCENT: Final = "min_stock_percent"
 CONF_LEVEL_ENTITY: Final = "level_entity"
 CONF_INITIAL_STOCK_KG: Final = "initial_stock_kg"
 CONF_INITIAL_PRICE_PER_TONNE: Final = "initial_price_per_tonne"
+CONF_IMPORT_HISTORY: Final = "import_history"
 
 # Consumption source types
 SOURCE_KG: Final = "kg_counter"

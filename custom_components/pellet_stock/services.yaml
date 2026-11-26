@@ -59,3 +59,11 @@ delete_delivery:
       required: true
       selector:
         text:
+
+import_history:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pellet_stock
