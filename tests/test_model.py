@@ -128,3 +128,15 @@ def test_roundtrip_and_prune() -> None:
     assert restored == m
     restored.prune(date(2026, 11, 26), 400)
     assert list(restored.daily_kg) == ["2026-11-01"]
+
+
+def test_remove_delivery() -> None:
+    """Removing a delivery reverses stock and value; unknown IDs are ignored."""
+    m = StockModel(stock_kg=1000, avg_price_per_kg=0.30)
+    d = m.add_delivery(1000, 500, date(2026, 11, 1))
+    assert m.last_delivery == d
+    assert m.remove_delivery("missing") is None
+    assert m.remove_delivery(d.id) == d
+    assert m.stock_kg == 1000
+    assert m.avg_price_per_kg == pytest.approx(0.30)
+    assert m.last_delivery is None

@@ -220,12 +220,80 @@
       },
       "level_deviation": {
         "name": "Difference to measured level"
+      },
+      "last_delivery": {
+        "name": "Last delivery"
       }
     }
   },
   "exceptions": {
     "level_unavailable": {
       "message": "The fill level sensor has no valid value right now."
+    },
+    "unknown_storage": {
+      "message": "This pellet storage does not exist."
+    },
+    "storage_not_loaded": {
+      "message": "This pellet storage is not loaded right now."
+    },
+    "unknown_delivery": {
+      "message": "No delivery with this ID. You find the IDs in the attributes of the \"Last delivery\" sensor."
+    }
+  },
+  "services": {
+    "add_delivery": {
+      "name": "Add delivery",
+      "description": "Adds a pellet delivery to the stock and updates the average price.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Storage",
+          "description": "The pellet storage that was filled."
+        },
+        "kg": {
+          "name": "Amount",
+          "description": "Delivered pellets in kg (see delivery note)."
+        },
+        "price": {
+          "name": "Total price",
+          "description": "What the whole delivery cost, including delivery fee. 0 if unknown."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Delivery date. Today if empty."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional, e.g. supplier or quality. Not included in diagnostics."
+        }
+      }
+    },
+    "correct_stock": {
+      "name": "Correct stock",
+      "description": "Sets the stock to a known value, e.g. after looking into the storage. Consumption tracking continues from there.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Storage",
+          "description": "The pellet storage to correct."
+        },
+        "stock_kg": {
+          "name": "Stock",
+          "description": "What is really in the storage now, in kg."
+        }
+      }
+    },
+    "delete_delivery": {
+      "name": "Delete delivery",
+      "description": "Removes a wrongly entered delivery and takes its amount and value back out of the stock.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Storage",
+          "description": "The pellet storage of the delivery."
+        },
+        "delivery_id": {
+          "name": "Delivery ID",
+          "description": "ID from the attributes of the \"Last delivery\" sensor."
+        }
+      }
     }
   }
 }
