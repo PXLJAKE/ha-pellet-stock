@@ -16,6 +16,7 @@ from .const import DOMAIN
 from .frontend import async_register_card
 from .manager import PelletStockManager
 from .services import async_setup_services
+from .websocket import async_register_websocket
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
 
@@ -27,6 +28,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions (once, for all storages)."""
     async_setup_services(hass)
+    async_register_websocket(hass)
     await async_register_card(hass)
     return True
 
