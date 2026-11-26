@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 import logging
 from typing import Any
 
@@ -65,7 +65,7 @@ from .const import (
     SOURCE_RUNTIME,
     STORAGE_VERSION,
 )
-from .model import RangeEstimate, StockModel
+from .model import Delivery, RangeEstimate, StockModel
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -367,6 +367,32 @@ class PelletStockManager:
         self.model.set_stock(level)
         self._changed()
         return True
+
+    # ----- deliveries and corrections -----
+
+    async def async_add_delivery(
+        self, kg: float, price_total: float, day: date, note: str = ""
+    ) -> Delivery:
+        """Add a delivery and save right away (deliveries are rare and important)."""
+        delivery = self.model.add_delivery(kg, price_total, day, note)
+        self._changed(save=False)
+        await self._store.async_save(self.model.to_dict())
+        return delivery
+
+    async def async_delete_delivery(self, delivery_id: str) -> Delivery | None:
+        """Remove a wrongly entered delivery."""
+        delivery = self.model.remove_delivery(delivery_id)
+        if delivery is not None:
+            self._changed(save=False)
+            await self._store.async_save(self.model.to_dict())
+        return delivery
+
+    async def async_correct_stock(self, kg: float) -> float:
+        """Set the stock to a known value, e.g. after measuring."""
+        diff = self.model.set_stock(kg)
+        self._changed(save=False)
+        await self._store.async_save(self.model.to_dict())
+        return diff
 
     # ----- midnight -----
 

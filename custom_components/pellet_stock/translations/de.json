@@ -220,12 +220,80 @@
       },
       "level_deviation": {
         "name": "Abweichung zum Messwert"
+      },
+      "last_delivery": {
+        "name": "Letzte Lieferung"
       }
     }
   },
   "exceptions": {
     "level_unavailable": {
       "message": "Der Füllstandssensor hat gerade keinen gültigen Wert."
+    },
+    "unknown_storage": {
+      "message": "Dieses Pelletlager gibt es nicht."
+    },
+    "storage_not_loaded": {
+      "message": "Dieses Pelletlager ist gerade nicht geladen."
+    },
+    "unknown_delivery": {
+      "message": "Keine Lieferung mit dieser ID. Die IDs stehen in den Attributen des Sensors „Letzte Lieferung“."
+    }
+  },
+  "services": {
+    "add_delivery": {
+      "name": "Lieferung eintragen",
+      "description": "Bucht eine Pelletlieferung auf den Bestand und aktualisiert den Durchschnittspreis.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Lager",
+          "description": "Das Pelletlager, das befüllt wurde."
+        },
+        "kg": {
+          "name": "Menge",
+          "description": "Gelieferte Pellets in kg (siehe Lieferschein)."
+        },
+        "price": {
+          "name": "Gesamtpreis",
+          "description": "Was die ganze Lieferung gekostet hat, inklusive Anfahrt. 0, wenn unbekannt."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Lieferdatum. Leer = heute."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optional, z. B. Lieferant oder Qualität. Erscheint nicht in der Diagnose."
+        }
+      }
+    },
+    "correct_stock": {
+      "name": "Bestand korrigieren",
+      "description": "Setzt den Bestand auf einen bekannten Wert, z. B. nach einem Blick ins Lager. Der Verbrauch wird ab dort weitergezählt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Lager",
+          "description": "Das Pelletlager, das korrigiert wird."
+        },
+        "stock_kg": {
+          "name": "Bestand",
+          "description": "Was jetzt wirklich im Lager ist, in kg."
+        }
+      }
+    },
+    "delete_delivery": {
+      "name": "Lieferung löschen",
+      "description": "Entfernt eine falsch eingetragene Lieferung und nimmt Menge und Wert wieder aus dem Bestand.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Lager",
+          "description": "Das Pelletlager der Lieferung."
+        },
+        "delivery_id": {
+          "name": "Lieferungs-ID",
+          "description": "ID aus den Attributen des Sensors „Letzte Lieferung“."
+        }
+      }
     }
   }
 }

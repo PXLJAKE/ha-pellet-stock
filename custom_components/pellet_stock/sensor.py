@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -43,7 +43,7 @@ def _fill_percent(m: PelletStockManager) -> float | None:
 class PelletSensorDescription(SensorEntityDescription):
     """Describes one pellet sensor."""
 
-    value_fn: Callable[[PelletStockManager], float | None]
+    value_fn: Callable[[PelletStockManager], float | datetime | None]
     attrs_fn: Callable[[PelletStockManager], dict[str, Any]] | None = None
     reset_fn: Callable[[], datetime] | None = None
     currency: bool = False
@@ -174,6 +174,40 @@ SENSORS: tuple[PelletSensorDescription, ...] = (
     ),
 )
 
+
+def _last_delivery_time(m: PelletStockManager) -> datetime | None:
+    if (d := m.model.last_delivery) is None:
+        return None
+    return dt_util.start_of_local_day(date.fromisoformat(d.date))
+
+
+def _delivery_attrs(m: PelletStockManager) -> dict[str, Any]:
+    last = m.model.last_delivery
+    recent = m.model.deliveries[-10:][::-1]
+    return {
+        "kg": last.kg if last else None,
+        "price": last.price_total if last else None,
+        "deliveries": [
+            {
+                "id": d.id,
+                "date": d.date,
+                "kg": d.kg,
+                "price": d.price_total,
+                "note": d.note,
+            }
+            for d in recent
+        ],
+    }
+
+
+LAST_DELIVERY = PelletSensorDescription(
+    key="last_delivery",
+    translation_key="last_delivery",
+    device_class=SensorDeviceClass.TIMESTAMP,
+    value_fn=_last_delivery_time,
+    attrs_fn=_delivery_attrs,
+)
+
 LEVEL_DEVIATION = PelletSensorDescription(
     key="level_deviation",
     translation_key="level_deviation",
@@ -194,7 +228,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the sensors."""
     manager = entry.runtime_data
-    descriptions = list(SENSORS)
+    descriptions = [*SENSORS, LAST_DELIVERY]
     if manager.level_entity:
         descriptions.append(LEVEL_DEVIATION)
     async_add_entities(PelletSensor(manager, d) for d in descriptions)
@@ -204,7 +238,9 @@ class PelletSensor(PelletStockEntity, SensorEntity):
     """A value of the pellet storage."""
 
     entity_description: PelletSensorDescription
-    _unrecorded_attributes = frozenset({"reason", "reason_time", "measured_kg"})
+    _unrecorded_attributes = frozenset(
+        {"reason", "reason_time", "measured_kg", "deliveries", "kg", "price"}
+    )
 
     def __init__(
         self, manager: PelletStockManager, description: PelletSensorDescription
@@ -222,7 +258,7 @@ class PelletSensor(PelletStockEntity, SensorEntity):
             )
 
     @property
-    def native_value(self) -> float | None:
+    def native_value(self) -> float | datetime | None:
         """Return the value."""
         return self.entity_description.value_fn(self.manager)
 

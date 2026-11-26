@@ -21,6 +21,9 @@ All notable changes are listed here. The format follows
   price per tonne, cost this month and this year, difference to measured level.
 - Binary sensor "Minimum stock reached" and event `pellet_stock_low_stock`.
 - Button to take the measured fill level as stock.
+- Actions `add_delivery` (amount, total price, date, note), `correct_stock`
+  and `delete_delivery`, plus a "Last delivery" sensor with the ten most
+  recent deliveries as attributes. Deliveries are saved immediately.
 - Plain-language "reason" attributes (German/English) for range, minimum stock
   and every decision about the consumption sensor.
 - Project scaffold: integration skeleton with a setup assistant (name only),

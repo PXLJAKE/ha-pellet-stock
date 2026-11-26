@@ -121,6 +121,29 @@ class StockModel:
         self.deliveries.sort(key=lambda d: d.date)
         return delivery
 
+    def remove_delivery(self, delivery_id: str) -> Delivery | None:
+        """Remove a wrongly entered delivery and take its kg and value back out.
+
+        The average price is reversed by value. Pellets used since then cannot
+        be told apart, so the result is a close approximation.
+        """
+        for delivery in self.deliveries:
+            if delivery.id == delivery_id:
+                break
+        else:
+            return None
+        self.deliveries.remove(delivery)
+        value = self.stock_kg * self.avg_price_per_kg - delivery.price_total
+        self.stock_kg = max(0.0, self.stock_kg - delivery.kg)
+        if self.stock_kg > 0:
+            self.avg_price_per_kg = max(0.0, value) / self.stock_kg
+        return delivery
+
+    @property
+    def last_delivery(self) -> Delivery | None:
+        """Return the most recent delivery."""
+        return self.deliveries[-1] if self.deliveries else None
+
     def set_stock(self, kg: float) -> float:
         """Correct the stock (e.g. from a scale). Returns the difference."""
         kg = max(0.0, kg)
