@@ -27,6 +27,27 @@ def test_counter_daily_reset_like_oekofen() -> None:
         assert c.step(value, 10) == expected
 
 
+def test_counter_missed_midnight_zero_counts_new_day() -> None:
+    """A daily counter whose zero was missed: a small drop on a new day is a reset."""
+    c = CounterTracker()
+    assert c.step(3.0, 5, "2026-07-01") == (0.0, "baseline")
+    assert c.step(4.0, 5, "2026-07-01") == (1.0, "counted")
+    # Same day: a small drop is only a glitch.
+    assert c.step(3.8, 5, "2026-07-01") == (0.0, "small_backstep")
+    # Next day, first value already 0.5: the reset is recognised.
+    assert c.step(0.5, 5, "2026-07-02") == (0.5, "reset_counted")
+    assert c.step(1.0, 5, "2026-07-02") == (0.5, "counted")
+
+
+def test_total_counter_small_drop_on_new_day_is_ignored() -> None:
+    """A total counter (large value) does not reset on a small drop after midnight."""
+    c = CounterTracker()
+    c.step(8000.0, 5, "2026-07-01")
+    assert c.step(7999.5, 5, "2026-07-02") == (0.0, "small_backstep")
+    kg, decision = c.step(8000.2, 5, "2026-07-02")
+    assert (kg, decision) == (pytest.approx(0.2), "counted")
+
+
 def test_counter_reset_with_value_counts_since_reset() -> None:
     """When the first value after a reset is already above zero, count it."""
     c = CounterTracker(baseline=29)

@@ -287,7 +287,9 @@ class PelletStockManager:
             return
 
         before = self.model.counter.baseline
-        kg, decision = self.model.counter.step(value, self.max_step_kg)
+        kg, decision = self.model.counter.step(
+            value, self.max_step_kg, now.date().isoformat()
+        )
         self.model.consume(kg, now)
         self._decide(
             f"source_{decision}",
