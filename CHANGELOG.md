@@ -45,6 +45,10 @@ All notable changes are listed here. The format follows
   restarted no longer counts the time Home Assistant was off. The "Why?"
   text says so.
 - Actions reject amounts, stock and prices above 100,000.
+- Daily counters: when Home Assistant misses the zero at midnight and the
+  first value of the new day is already small (e.g. 4.0 yesterday, 0.5
+  today), this is now recognised as a reset instead of a measuring glitch, so
+  no consumption is lost.
 - Plain-language "reason" attributes (German/English) for range, minimum stock
   and every decision about the consumption sensor.
 - Project scaffold: integration skeleton with a setup assistant (name only),

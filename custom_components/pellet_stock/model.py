@@ -40,30 +40,45 @@ class CounterTracker:
     The baseline is a high-water mark: small backward jumps are ignored and
     do not cause double counting when the counter climbs back. A drop larger
     than the plausibility limit, or a drop to zero, is treated as a reset.
+    So is a drop to a small value after the day changed: a daily counter
+    whose zero at midnight was missed (e.g. 4.0 yesterday, 0.5 today).
     """
 
     baseline: float | None = None
+    baseline_day: str | None = None  # local date the baseline was last raised or reset
 
-    def step(self, value: float, max_step: float) -> tuple[float, str]:  # noqa: PLR0911
+    def step(  # noqa: PLR0911
+        self, value: float, max_step: float, day: str | None = None
+    ) -> tuple[float, str]:
         """Return (consumption since last value, decision)."""
         if self.baseline is None:
-            self.baseline = value
+            self._set(value, day)
             return 0.0, "baseline"
         delta = value - self.baseline
         if delta > 0:
-            self.baseline = value
+            self._set(value, day)
             if delta > max_step:
                 return 0.0, "implausible_jump"
             return delta, "counted"
         if delta == 0:
             return 0.0, "unchanged"
         # The counter went down.
-        if value == 0 or -delta > max_step:
-            self.baseline = value
+        new_day = (
+            day is not None
+            and self.baseline_day is not None
+            and day != self.baseline_day
+        )
+        if value == 0 or -delta > max_step or (new_day and value <= max_step):
+            self._set(value, day)
             if 0 < value <= max_step:
                 return value, "reset_counted"
             return 0.0, "reset"
         return 0.0, "small_backstep"
+
+    def _set(self, value: float, day: str | None) -> None:
+        self.baseline = value
+        if day is not None:
+            self.baseline_day = day
 
 
 @dataclass
@@ -209,7 +224,10 @@ class StockModel:
     def to_dict(self) -> dict[str, Any]:
         """Serialize for the HA store."""
         data = asdict(self)
-        data["counter"] = {"baseline": self.counter.baseline}
+        data["counter"] = {
+            "baseline": self.counter.baseline,
+            "baseline_day": self.counter.baseline_day,
+        }
         return data
 
     @classmethod
@@ -235,7 +253,10 @@ class StockModel:
             cost_by_month=dict(data.get("cost_by_month", {})),
             cost_by_year=dict(data.get("cost_by_year", {})),
             deliveries=[Delivery(**d) for d in data.get("deliveries", [])],
-            counter=CounterTracker(baseline=data.get("counter", {}).get("baseline")),
+            counter=CounterTracker(
+                baseline=data.get("counter", {}).get("baseline"),
+                baseline_day=data.get("counter", {}).get("baseline_day"),
+            ),
             runtime_on_since=data.get("runtime_on_since"),
             source_key=data.get("source_key", ""),
         )
