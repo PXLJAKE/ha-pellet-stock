@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pelletlager hinzufügen",
+        "description": "Jedes Pelletlager (Silo, Bunker, Sacklager) bekommt einen eigenen Eintrag. Du kannst beliebig viele anlegen.",
+        "data": {
+          "name": "Name"
+        },
+        "data_description": {
+          "name": "Wird als Gerätename angezeigt, z. B. „Pelletsilo“."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Ein Lager mit diesem Namen gibt es schon."
+    }
+  }
+}

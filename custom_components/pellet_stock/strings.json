@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add pellet storage",
+        "description": "Each pellet storage (silo, bunker, bag store) gets its own entry. You can add as many as you like.",
+        "data": {
+          "name": "Name"
+        },
+        "data_description": {
+          "name": "Shown as the device name, e.g. \"Pellet silo\"."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "A storage with this name already exists."
+    }
+  }
+}
