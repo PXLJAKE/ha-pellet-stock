@@ -1,10 +1,17 @@
 name: Release
 
-# Started by hand (Actions → Release → Run workflow). Publishes the version
-# from the manifest as a GitHub release, with the matching changelog section
-# as the text and a ZIP for manual installation.
+# Publishes the version from the manifest as a GitHub release, with the
+# matching changelog section as the text and a ZIP for manual installation.
+# Runs when the manifest (or this file) changes on main, or by hand. Nothing
+# happens if the release for that version already exists, so: no version
+# change, no release. Versions with a hyphen (beta, rc) become pre-releases.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - custom_components/pellet_stock/manifest.json
+      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
@@ -30,8 +37,8 @@ jobs:
         id: version
         run: |
           version="$(jq -r .version custom_components/pellet_stock/manifest.json)"
-          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Manifest version '$version' is not x.y.z"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::Manifest version '$version' is not x.y.z or x.y.z-suffix"
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -60,8 +67,10 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           if gh release view "v$VERSION" >/dev/null 2>&1; then
-            echo "::error::Release v$VERSION already exists. Raise the version first."
-            exit 1
+            echo "Release v$VERSION already exists, nothing to do."
+            exit 0
           fi
+          flags=()
+          case "$VERSION" in *-*) flags+=(--prerelease) ;; esac
           gh release create "v$VERSION" "pellet_stock-$VERSION.zip" \
-            --target "$GITHUB_SHA" --title "v$VERSION" --notes-file notes.md
+            --target "$GITHUB_SHA" --title "v$VERSION" --notes-file notes.md "${flags[@]}"
