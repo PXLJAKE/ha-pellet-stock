@@ -13,6 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
+from .frontend import async_register_card
 from .manager import PelletStockManager
 from .services import async_setup_services
 
@@ -26,6 +27,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions (once, for all storages)."""
     async_setup_services(hass)
+    await async_register_card(hass)
     return True
 
 
