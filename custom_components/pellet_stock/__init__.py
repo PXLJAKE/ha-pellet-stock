@@ -40,9 +40,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: PelletStockConfigEntry) 
     entry.runtime_data = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     manager.async_start()
-    if entry.data.get(CONF_IMPORT_HISTORY) and not manager.model.history_checked:
+    model = manager.model
+    if model.history_redo or (
+        entry.data.get(CONF_IMPORT_HISTORY) and not model.history_checked
+    ):
         # Once, right after setup: fill the charts from the HA statistics.
-        manager.model.history_checked = True
+        # Also once more after data of version 0.2.0 was repaired.
+        model.history_checked = True
+        model.history_redo = False
         entry.async_create_background_task(
             hass, manager.async_import_history(), f"{DOMAIN}_import_history"
         )

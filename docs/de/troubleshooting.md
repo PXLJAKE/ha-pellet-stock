@@ -29,8 +29,12 @@ Setz ihn mit der Aktion `pellet_stock.correct_stock`, oder mit dem Knopf *Gemess
 ## Die Übernahme des Verlaufs bringt nichts
 
 - **„Für den Sensor gibt es keine Langzeitstatistik“**: Home Assistant führt nur für Sensoren mit Zustandsklasse eine Statistik. Prüfe unter **Entwicklerwerkzeuge → Statistik**, ob dein Sensor dort steht.
-- **„Der Verlauf wurde schon übernommen“**: Die Übernahme läuft einmal pro Lager, damit nichts doppelt gezählt wird.
+- **„Der Verlauf wurde schon übernommen“**: Die Übernahme läuft einmal pro Lager, damit nichts doppelt gezählt wird. Zum Neueinlesen führst du die Aktion mit `replace: true` aus.
 - Die Aktion `pellet_stock.import_history` fehlt: Du hast eine Version vor 0.2.0. Aktualisiere und starte neu.
+
+## Verbrauch und Kosten sind viel zu hoch
+
+Version 0.2.0 hat den übernommenen Verlauf bei jedem Neustart noch einmal dazugezählt. Aktualisiere auf 0.2.1 oder neuer und starte neu: Der Verlauf wird automatisch entfernt und neu gelesen. Der Bestand war nicht betroffen.
 
 ## Eine Lieferung ist falsch
 

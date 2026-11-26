@@ -27,6 +27,7 @@ ATTR_DATE = "date"
 ATTR_NOTE = "note"
 ATTR_STOCK_KG = "stock_kg"
 ATTR_DELIVERY_ID = "delivery_id"
+ATTR_REPLACE = "replace"
 
 SERVICE_ADD_DELIVERY = "add_delivery"
 SERVICE_CORRECT_STOCK = "correct_stock"
@@ -113,7 +114,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def import_history(call: ServiceCall) -> ServiceResponse:
         manager = _manager(hass, call)
-        result = await manager.async_import_history()
+        result = await manager.async_import_history(replace=call.data[ATTR_REPLACE])
         if result.status == "already_imported":
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
@@ -126,7 +127,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_IMPORT_HISTORY,
         import_history,
-        schema=vol.Schema(_ENTRY),
+        schema=vol.Schema(
+            {**_ENTRY, vol.Optional(ATTR_REPLACE, default=False): cv.boolean}
+        ),
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(

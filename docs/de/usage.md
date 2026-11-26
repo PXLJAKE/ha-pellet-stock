@@ -47,7 +47,7 @@ Trägst du Lieferungen auch am Kessel selbst ein, wird nichts doppelt gezählt. 
 | `pellet_stock.add_delivery` | `config_entry_id`, `kg`, `price` (Preis der ganzen Lieferung, optional), `date` (optional, sonst heute), `note` (optional) |
 | `pellet_stock.correct_stock` | `config_entry_id`, `stock_kg` (was jetzt wirklich im Lager liegt) |
 | `pellet_stock.delete_delivery` | `config_entry_id`, `delivery_id` (aus den Attributen von *Letzte Lieferung*) |
-| `pellet_stock.import_history` | `config_entry_id`. Übernimmt den bisherigen Tagesverbrauch aus der Statistik, einmal pro Lager |
+| `pellet_stock.import_history` | `config_entry_id`, `replace` (optional). Übernimmt den bisherigen Tagesverbrauch aus der Statistik, einmal pro Lager. Mit `replace` wird eine frühere Übernahme entfernt und neu gelesen |
 
 Jede Aktion gibt eine Antwort zurück, zum Beispiel den neuen Bestand. Du findest sie unter **Entwicklerwerkzeuge → Aktionen** und wählst dort das Lager aus einer Liste.
 

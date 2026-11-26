@@ -307,6 +307,10 @@
         "config_entry_id": {
           "name": "Storage",
           "description": "The pellet storage to fill."
+        },
+        "replace": {
+          "name": "Read again",
+          "description": "Removes what an earlier import added and reads the statistics again. Use it if the imported values are wrong. Consumption the integration counted itself is kept."
         }
       }
     }

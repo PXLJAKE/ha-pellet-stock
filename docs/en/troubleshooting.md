@@ -29,8 +29,12 @@ Set it with the action `pellet_stock.correct_stock`, or with the button *Take me
 ## The history import brings nothing
 
 - **"There are no long-term statistics for the sensor"**: Home Assistant only keeps statistics for sensors with a state class. Check under **Developer tools → Statistics** whether your sensor is listed.
-- **"The history was already taken over"**: the import runs once per storage, so nothing is counted twice.
+- **"The history was already taken over"**: the import runs once per storage, so nothing is counted twice. To read it again, run the action with `replace: true`.
 - The action `pellet_stock.import_history` is missing: you have a version before 0.2.0. Update and restart.
+
+## Consumption and cost are far too high
+
+Version 0.2.0 added the imported history again on every restart. Update to 0.2.1 or newer and restart: the history is removed and read again automatically. The stock was not affected.
 
 ## A delivery is wrong
 

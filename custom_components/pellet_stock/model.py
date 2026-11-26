@@ -81,6 +81,15 @@ class CounterTracker:
             self.baseline_day = day
 
 
+def _subtract(values: dict[str, float], key: str, amount: float) -> None:
+    """Subtract from a total and drop it when nothing is left."""
+    left = values.get(key, 0.0) - amount
+    if left > 1e-6:
+        values[key] = left
+    else:
+        values.pop(key, None)
+
+
 @dataclass
 class StockModel:
     """Stock, consumption and cost of one pellet storage."""
@@ -100,6 +109,10 @@ class StockModel:
     source_key: str = ""  # identifies the source setup the counter baseline belongs to
     history_from: str = ""  # first day taken over from the HA statistics (ISO date)
     history_checked: bool = False  # the automatic import after setup has run
+    history_redo: bool = False  # repaired data: the import has to run once more
+    # What the import added, as [kg, cost], so it can be taken out again.
+    import_by_day: dict[str, list[float]] = field(default_factory=dict)
+    import_by_month: dict[str, list[float]] = field(default_factory=dict)
 
     # ----- changes -----
 
@@ -133,12 +146,31 @@ class StockModel:
         if keep_daily:
             self.daily_kg[key] = self.daily_kg.get(key, 0.0) + kg
             self.daily_cost[key] = self.daily_cost.get(key, 0.0) + cost
+            booked = self.import_by_day.setdefault(key, [0.0, 0.0])
+            booked[0] += kg
+            booked[1] += cost
         month, year = key[:7], key[:4]
         self.kg_by_month[month] = self.kg_by_month.get(month, 0.0) + kg
         self.cost_by_month[month] = self.cost_by_month.get(month, 0.0) + cost
         self.cost_by_year[year] = self.cost_by_year.get(year, 0.0) + cost
+        booked = self.import_by_month.setdefault(month, [0.0, 0.0])
+        booked[0] += kg
+        booked[1] += cost
         if not self.history_from or key < self.history_from:
             self.history_from = key
+
+    def clear_import(self) -> None:
+        """Take everything the import added out again, so it can run anew."""
+        for key, (kg, cost) in self.import_by_day.items():
+            _subtract(self.daily_kg, key, kg)
+            _subtract(self.daily_cost, key, cost)
+        for month, (kg, cost) in self.import_by_month.items():
+            _subtract(self.kg_by_month, month, kg)
+            _subtract(self.cost_by_month, month, cost)
+            _subtract(self.cost_by_year, month[:4], cost)
+        self.import_by_day = {}
+        self.import_by_month = {}
+        self.history_from = ""
 
     def add_delivery(
         self, kg: float, price_total: float, day: date, note: str = ""
@@ -197,6 +229,9 @@ class StockModel:
         cutoff = (today - timedelta(days=keep_days)).isoformat()
         self.daily_kg = {k: v for k, v in self.daily_kg.items() if k >= cutoff}
         self.daily_cost = {k: v for k, v in self.daily_cost.items() if k >= cutoff}
+        self.import_by_day = {
+            k: v for k, v in self.import_by_day.items() if k >= cutoff
+        }
 
     # ----- values -----
 
@@ -262,6 +297,10 @@ class StockModel:
     def from_dict(cls, data: dict[str, Any]) -> StockModel:
         """Restore from the HA store."""
         model = cls._from_dict(data)
+        if model.history_from and "import_by_month" not in data:
+            # Version 0.2.0 forgot that the history was taken over and added it
+            # again on every start. Drop it; the import then runs once more.
+            model.drop_untracked_history()
         if "kg_by_month" not in data:
             # Data from before monthly totals existed: rebuild from the days.
             for day, kg in model.daily_kg.items():
@@ -287,7 +326,49 @@ class StockModel:
             ),
             runtime_on_since=data.get("runtime_on_since"),
             source_key=data.get("source_key", ""),
+            history_from=data.get("history_from", ""),
+            history_checked=bool(data.get("history_checked", False)),
+            history_redo=bool(data.get("history_redo", False)),
+            import_by_day={
+                k: [float(v[0]), float(v[1])]
+                for k, v in data.get("import_by_day", {}).items()
+            },
+            import_by_month={
+                k: [float(v[0]), float(v[1])]
+                for k, v in data.get("import_by_month", {}).items()
+            },
         )
+
+    def drop_untracked_history(self) -> None:
+        """Keep only what the integration counted itself since tracking began.
+
+        Used to repair data of version 0.2.0. Everything before the first
+        tracked day came from the import. On that first day, the counted part
+        is the total consumption minus the later days.
+        """
+        if not self.tracking_since:
+            return
+        first = datetime.fromisoformat(self.tracking_since).date().isoformat()
+        later = {k: v for k, v in self.daily_kg.items() if k > first}
+        counted_first = max(0.0, self.total_consumed_kg - sum(later.values()))
+        counted_first = min(counted_first, self.daily_kg.get(first, 0.0))
+        share = (
+            counted_first / self.daily_kg[first] if self.daily_kg.get(first) else 0.0
+        )
+        costs = {k: v for k, v in self.daily_cost.items() if k > first}
+        if counted_first > 0:
+            later[first] = counted_first
+            costs[first] = self.daily_cost.get(first, 0.0) * share
+        self.daily_kg, self.daily_cost = later, costs
+        self.kg_by_month, self.cost_by_month, self.cost_by_year = {}, {}, {}
+        for key, kg in later.items():
+            self.kg_by_month[key[:7]] = self.kg_by_month.get(key[:7], 0.0) + kg
+        for key, cost in costs.items():
+            self.cost_by_month[key[:7]] = self.cost_by_month.get(key[:7], 0.0) + cost
+            self.cost_by_year[key[:4]] = self.cost_by_year.get(key[:4], 0.0) + cost
+        self.import_by_day, self.import_by_month = {}, {}
+        self.history_from = ""
+        self.history_redo = True
 
     # ----- analysis -----
 

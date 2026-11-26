@@ -32,10 +32,15 @@ def _day_start(days_ago: int):
 
 
 def _import_daily_counter(hass: HomeAssistant, per_day: dict[int, float]) -> None:
-    """Hourly statistics of a counter that resets every midnight (measurement)."""
+    """Hourly statistics of a counter that resets every midnight (measurement).
+
+    Like the real thing: in the first hour of a day the highest value is still
+    the total of the day before, because the counter resets just after midnight.
+    """
     rows = []
     for days_ago, total in per_day.items():
         start = _day_start(days_ago)
+        carried = per_day.get(days_ago + 1, 0.0)
         for hour in range(24):
             value = total * (hour + 1) / 24
             rows.append(
@@ -43,7 +48,7 @@ def _import_daily_counter(hass: HomeAssistant, per_day: dict[int, float]) -> Non
                     "start": start + timedelta(hours=hour),
                     "mean": value,
                     "min": 0.0 if hour == 0 else total * hour / 24,
-                    "max": value,
+                    "max": max(value, carried) if hour == 0 else value,
                 }
             )
     async_import_statistics(
@@ -87,7 +92,7 @@ async def test_daily_counter_history_is_imported(
     )
     assert result["status"] == "imported"
     assert result["days"] == 3
-    assert result["method"] == "daily_max"
+    assert result["method"] == "hourly"
     assert result["kg"] == pytest.approx(66.0)
 
     model = manager.model
@@ -183,3 +188,65 @@ async def test_no_statistics(recorder_mock: Recorder, hass: HomeAssistant, mock_
     result = await mock_entry.runtime_data.async_import_history()
     assert result.status == "no_statistics"
     assert not mock_entry.runtime_data.model.history_from
+
+
+async def test_lighter_day_does_not_take_the_total_of_the_day_before(
+    recorder_mock: Recorder, hass: HomeAssistant, mock_entry: MockConfigEntry
+) -> None:
+    """After a day with 32 kg, a day with 20 kg counts 20, not 32."""
+    _import_daily_counter(hass, {4: 32.0, 3: 20.0, 2: 0.0, 1: 29.0})
+    await async_wait_recording_done(hass)
+    hass.states.async_set(USAGE, "0", {"unit_of_measurement": "kg"})
+    await _setup(hass, mock_entry)
+    model = mock_entry.runtime_data.model
+    result = await mock_entry.runtime_data.async_import_history()
+    assert result.kg == pytest.approx(81.0)
+    assert model.consumed_on(_day_start(4).date()) == pytest.approx(32.0)
+    assert model.consumed_on(_day_start(3).date()) == pytest.approx(20.0)
+    assert model.consumed_on(_day_start(2).date()) == 0
+    assert model.consumed_on(_day_start(1).date()) == pytest.approx(29.0)
+
+
+async def test_history_is_not_counted_again_after_reload(
+    recorder_mock: Recorder, hass: HomeAssistant, entry_data
+) -> None:
+    """Reloading or restarting must not add the history a second time."""
+    _import_daily_counter(hass, {3: 24.0, 2: 30.0})
+    await async_wait_recording_done(hass)
+    entry_data["import_history"] = True
+    entry = MockConfigEntry(domain=DOMAIN, title="Pelletsilo", data=entry_data)
+    hass.states.async_set(USAGE, "0", {"unit_of_measurement": "kg"})
+    await _setup(hass, entry)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    for _ in range(3):
+        assert await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done(wait_background_tasks=True)
+    model = entry.runtime_data.model
+    assert model.history_from == _day_start(3).date().isoformat()
+    assert model.consumed_on(_day_start(2).date()) == pytest.approx(30.0)
+    assert sum(model.kg_by_month.values()) == pytest.approx(54.0)
+
+
+async def test_replace_reads_the_history_again(
+    recorder_mock: Recorder, hass: HomeAssistant, mock_entry: MockConfigEntry
+) -> None:
+    """With replace, the earlier import is taken out and read anew."""
+    _import_daily_counter(hass, {3: 24.0, 2: 30.0})
+    await async_wait_recording_done(hass)
+    hass.states.async_set(USAGE, "0", {"unit_of_measurement": "kg"})
+    await _setup(hass, mock_entry)
+    manager = mock_entry.runtime_data
+    await manager.async_import_history()
+    # Something the integration counted itself must survive.
+    manager.model.consume(2.0, dt_util.now())
+    result = await hass.services.async_call(
+        DOMAIN,
+        "import_history",
+        {"config_entry_id": mock_entry.entry_id, "replace": True},
+        blocking=True,
+        return_response=True,
+    )
+    assert result["status"] == "imported"
+    assert result["kg"] == pytest.approx(54.0)
+    assert sum(manager.model.kg_by_month.values()) == pytest.approx(56.0)
+    assert manager.model.consumed_on(dt_util.now().date()) == pytest.approx(2.0)
