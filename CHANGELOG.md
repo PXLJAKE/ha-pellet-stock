@@ -6,6 +6,11 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Documentation site in English and German (MkDocs), attached to every full
+  release as `ha-pellet-stock-docs-<version>.zip`.
+
 ## [0.2.0] - 2026-11-26
 
 ### Added

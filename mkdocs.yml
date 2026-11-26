@@ -1,0 +1,92 @@
+site_name: Pellet Stock Manager
+site_description: Pellet stock, range, consumption and cost for Home Assistant, for any pellet boiler or stove.
+# The site is copied by hand to /docs/ha-pellet-stock/ on any domain. It is
+# built with this placeholder domain, and scripts/build_docs.py removes the
+# domain afterwards, so every link starts with /docs/ha-pellet-stock/.
+site_url: https://example.invalid/docs/ha-pellet-stock/
+repo_url: https://github.com/PXLJAKE/ha-pellet-stock
+repo_name: PXLJAKE/ha-pellet-stock
+edit_uri: ""
+copyright: Apache License 2.0
+docs_dir: docs
+site_dir: site/ha-pellet-stock
+strict: true
+
+theme:
+  name: material
+  # No requests to other servers: system fonts instead of Google Fonts.
+  font: false
+  icon:
+    logo: material/silo
+  favicon: images/favicon.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: brown
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: brown
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: de
+          name: Deutsch
+          build: true
+          site_description: Pelletbestand, Reichweite, Verbrauch und Kosten für Home Assistant, für jeden Pelletkessel oder Pelletofen.
+          nav_translations:
+            Getting started: Einstieg
+            Configuration: Konfiguration
+            Usage: Nutzung
+            Dashboard card: Dashboard-Karte
+            FAQ: Häufige Fragen
+            Troubleshooting: Fehlersuche
+            Changelog: Änderungen
+            Contributing: Mitmachen
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+nav:
+  - Getting started: index.md
+  - Configuration: configuration.md
+  - Usage: usage.md
+  - Dashboard card: card.md
+  - FAQ: faq.md
+  - Troubleshooting: troubleshooting.md
+  - Changelog: changelog.md
+  - Contributing: contributing.md

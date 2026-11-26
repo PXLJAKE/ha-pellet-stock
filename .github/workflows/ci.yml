@@ -35,6 +35,30 @@ jobs:
       - name: Tests
         run: python -m pytest --cov --cov-report=term-missing
 
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NO_MKDOCS_2_WARNING: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements_docs.txt
+      - name: Install documentation tools
+        run: pip install --require-hashes -r requirements_docs.txt
+      - name: Markdown lint
+        run: pymarkdown --config .pymarkdown.json scan docs README.md CONTRIBUTING.md CHANGELOG.md
+      - name: Build (strict) and check the sub-path
+        run: python scripts/build_docs.py
+      - name: Check every link under /docs/ha-pellet-stock/
+        run: python scripts/check_docs_links.py
+
   hassfest:
     name: Hassfest (HA manifest check)
     runs-on: ubuntu-latest
