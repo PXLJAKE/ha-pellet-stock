@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-26
+
 ### Added
 
 - Setup assistant in four steps: name and consumption source (kg counter,
@@ -60,3 +62,6 @@ All notable changes are listed here. The format follows
 - Project scaffold: integration skeleton with a setup assistant (name only),
   diagnostics with redacted free text, German and English texts, tests, CI
   (ruff, pytest, hassfest, HACS validation) and Dependabot.
+
+[Unreleased]: https://github.com/PXLJAKE/ha-pellet-stock/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/PXLJAKE/ha-pellet-stock/releases/tag/v0.2.0
