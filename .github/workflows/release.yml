@@ -1,0 +1,76 @@
+name: Release
+
+# Publishes the version from the manifest as a GitHub release, with the
+# matching changelog section as the text and a ZIP for manual installation.
+# Runs when the manifest (or this file) changes on main, or by hand. Nothing
+# happens if the release for that version already exists, so: no version
+# change, no release. Versions with a hyphen (beta, rc) become pre-releases.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - custom_components/pellet_stock/manifest.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read version
+        id: version
+        run: |
+          version="$(jq -r .version custom_components/pellet_stock/manifest.json)"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::Manifest version '$version' is not x.y.z or x.y.z-suffix"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Release notes from the changelog
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { found = 1; next }
+            found && (/^## \[/ || /^\[[^]]+\]: /) { exit }
+            found
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+      - name: Build ZIP
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cd custom_components/pellet_stock
+          zip -r -q "$GITHUB_WORKSPACE/pellet_stock-$VERSION.zip" . -x '*/__pycache__/*' '*.pyc'
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists, nothing to do."
+            exit 0
+          fi
+          flags=()
+          case "$VERSION" in *-*) flags+=(--prerelease) ;; esac
+          gh release create "v$VERSION" "pellet_stock-$VERSION.zip" \
+            --target "$GITHUB_SHA" --title "v$VERSION" --notes-file notes.md "${flags[@]}"
