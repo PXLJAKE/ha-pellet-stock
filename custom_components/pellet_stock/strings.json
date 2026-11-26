@@ -3,17 +3,229 @@
     "step": {
       "user": {
         "title": "Add pellet storage",
-        "description": "Each pellet storage (silo, bunker, bag store) gets its own entry. You can add as many as you like.",
+        "description": "Each storage (silo, bunker, bag store) gets its own entry. You can add as many as you like.",
         "data": {
-          "name": "Name"
+          "name": "Name",
+          "source_type": "Where does the consumption come from?"
         },
         "data_description": {
-          "name": "Shown as the device name, e.g. \"Pellet silo\"."
+          "name": "Shown as the device name, e.g. \"Pellet silo\".",
+          "source_type": "Pick what your heating already reports in Home Assistant. You can change it later."
+        }
+      },
+      "source_kg_counter": {
+        "title": "Consumption from a kg sensor",
+        "description": "Choose a sensor that counts used pellets in kg. A total counter and a daily counter that resets at midnight both work.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Calorific value",
+          "max_step_kg": "Largest plausible step"
+        },
+        "data_description": {
+          "source_entity": "E.g. the daily consumption of your boiler integration.",
+          "calorific_value": "Energy in one kg of pellets. 4.8 kWh/kg is typical for ENplus A1 pellets; your delivery note may say more. Used for the energy sensor and the price per kWh.",
+          "max_step_kg": "Bigger jumps between two sensor values are ignored, e.g. after a restart or a measuring error. 10 kg works for most boilers."
+        }
+      },
+      "source_energy_counter": {
+        "title": "Consumption from an energy sensor",
+        "description": "Choose a sensor that counts energy in kWh. Pellets are calculated as energy divided by calorific value.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Calorific value",
+          "efficiency": "Boiler efficiency",
+          "max_step_kg": "Largest plausible step"
+        },
+        "data_description": {
+          "source_entity": "A kWh counter of your boiler or heat meter.",
+          "calorific_value": "Energy in one kg of pellets. 4.8 kWh/kg is typical for ENplus A1 pellets; your delivery note may say more. Used for the energy sensor and the price per kWh.",
+          "max_step_kg": "Bigger jumps between two sensor values are ignored, e.g. after a restart or a measuring error. 10 kg works for most boilers.",
+          "efficiency": "Leave at 100 % if the sensor counts the energy in the pellets (like most boilers). If it measures the heat delivered, enter the boiler efficiency, e.g. 90 %."
+        }
+      },
+      "source_runtime": {
+        "title": "Consumption from burner runtime",
+        "description": "Choose what shows that the burner runs: an on/off entity, or a sensor counting operating hours. Pellets are runtime times kg per hour.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Calorific value",
+          "kg_per_hour": "Pellets per burner hour",
+          "max_step_kg": "Largest plausible step"
+        },
+        "data_description": {
+          "source_entity": "On/off entity (on = burner runs) or an hours counter.",
+          "calorific_value": "Energy in one kg of pellets. 4.8 kWh/kg is typical for ENplus A1 pellets; your delivery note may say more. Used for the energy sensor and the price per kWh.",
+          "max_step_kg": "Bigger jumps between two sensor values are ignored, e.g. after a restart or a measuring error. 10 kg works for most boilers.",
+          "kg_per_hour": "How many kg the burner uses per hour at its usual power. Find it in the boiler manual (nominal fuel use) or work it out from one delivery."
+        }
+      },
+      "storage": {
+        "title": "Your storage",
+        "description": "Tell the assistant how big the storage is and when you want a warning.",
+        "data": {
+          "capacity_kg": "Capacity",
+          "min_stock_percent": "Minimum stock",
+          "level_entity": "Fill level or scale sensor (optional)"
+        },
+        "data_description": {
+          "capacity_kg": "How many kg fit into the storage when it is full.",
+          "min_stock_percent": "Below this share of the capacity you get a warning and the 'Minimum stock reached' sensor turns on. 10 % leaves time to order.",
+          "level_entity": "A sensor that measures what is really in the storage (scale, ultrasonic, radar; kg or %). It is only compared with the calculated stock; you take it over with a button. Leave empty if you have none."
+        }
+      },
+      "start": {
+        "title": "Starting point",
+        "description": "What is in the storage today? From now on, consumption is subtracted automatically and deliveries are added.",
+        "data": {
+          "initial_stock_kg": "Current stock",
+          "initial_price_per_tonne": "Price per tonne"
+        },
+        "data_description": {
+          "initial_stock_kg": "Your best estimate. If you chose a fill level sensor, its value is suggested. You can correct it later.",
+          "initial_price_per_tonne": "What you paid for these pellets, including delivery. Used for costs and price per kWh. 0 = unknown."
         }
       }
     },
     "abort": {
       "already_configured": "A storage with this name already exists."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Settings",
+        "description": "Stock, deliveries and history are kept when you change settings.",
+        "data": {
+          "source_type": "Where does the consumption come from?"
+        },
+        "data_description": {
+          "source_type": "Pick what your heating already reports in Home Assistant. You can change it later."
+        }
+      },
+      "source_kg_counter": {
+        "title": "Consumption from a kg sensor",
+        "description": "Choose a sensor that counts used pellets in kg. A total counter and a daily counter that resets at midnight both work.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Calorific value",
+          "max_step_kg": "Largest plausible step"
+        },
+        "data_description": {
+          "source_entity": "E.g. the daily consumption of your boiler integration.",
+          "calorific_value": "Energy in one kg of pellets. 4.8 kWh/kg is typical for ENplus A1 pellets; your delivery note may say more. Used for the energy sensor and the price per kWh.",
+          "max_step_kg": "Bigger jumps between two sensor values are ignored, e.g. after a restart or a measuring error. 10 kg works for most boilers."
+        }
+      },
+      "source_energy_counter": {
+        "title": "Consumption from an energy sensor",
+        "description": "Choose a sensor that counts energy in kWh. Pellets are calculated as energy divided by calorific value.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Calorific value",
+          "efficiency": "Boiler efficiency",
+          "max_step_kg": "Largest plausible step"
+        },
+        "data_description": {
+          "source_entity": "A kWh counter of your boiler or heat meter.",
+          "calorific_value": "Energy in one kg of pellets. 4.8 kWh/kg is typical for ENplus A1 pellets; your delivery note may say more. Used for the energy sensor and the price per kWh.",
+          "max_step_kg": "Bigger jumps between two sensor values are ignored, e.g. after a restart or a measuring error. 10 kg works for most boilers.",
+          "efficiency": "Leave at 100 % if the sensor counts the energy in the pellets (like most boilers). If it measures the heat delivered, enter the boiler efficiency, e.g. 90 %."
+        }
+      },
+      "source_runtime": {
+        "title": "Consumption from burner runtime",
+        "description": "Choose what shows that the burner runs: an on/off entity, or a sensor counting operating hours. Pellets are runtime times kg per hour.",
+        "data": {
+          "source_entity": "Sensor",
+          "calorific_value": "Calorific value",
+          "kg_per_hour": "Pellets per burner hour",
+          "max_step_kg": "Largest plausible step"
+        },
+        "data_description": {
+          "source_entity": "On/off entity (on = burner runs) or an hours counter.",
+          "calorific_value": "Energy in one kg of pellets. 4.8 kWh/kg is typical for ENplus A1 pellets; your delivery note may say more. Used for the energy sensor and the price per kWh.",
+          "max_step_kg": "Bigger jumps between two sensor values are ignored, e.g. after a restart or a measuring error. 10 kg works for most boilers.",
+          "kg_per_hour": "How many kg the burner uses per hour at its usual power. Find it in the boiler manual (nominal fuel use) or work it out from one delivery."
+        }
+      },
+      "storage": {
+        "title": "Your storage",
+        "description": "Tell the assistant how big the storage is and when you want a warning.",
+        "data": {
+          "capacity_kg": "Capacity",
+          "min_stock_percent": "Minimum stock",
+          "level_entity": "Fill level or scale sensor (optional)"
+        },
+        "data_description": {
+          "capacity_kg": "How many kg fit into the storage when it is full.",
+          "min_stock_percent": "Below this share of the capacity you get a warning and the 'Minimum stock reached' sensor turns on. 10 % leaves time to order.",
+          "level_entity": "A sensor that measures what is really in the storage (scale, ultrasonic, radar; kg or %). It is only compared with the calculated stock; you take it over with a button. Leave empty if you have none."
+        }
+      }
+    }
+  },
+  "selector": {
+    "source_type": {
+      "options": {
+        "kg_counter": "A sensor counting pellets in kg",
+        "energy_counter": "A sensor counting energy in kWh",
+        "runtime": "Burner runtime"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "low_stock": {
+        "name": "Minimum stock reached"
+      }
+    },
+    "button": {
+      "adopt_level": {
+        "name": "Take measured fill level"
+      }
+    },
+    "sensor": {
+      "stock": {
+        "name": "Stock"
+      },
+      "fill_level": {
+        "name": "Fill level"
+      },
+      "range": {
+        "name": "Range"
+      },
+      "avg_daily_consumption": {
+        "name": "Average daily consumption"
+      },
+      "consumption_today": {
+        "name": "Consumption today"
+      },
+      "consumption_total": {
+        "name": "Total consumption"
+      },
+      "energy_total": {
+        "name": "Energy"
+      },
+      "price_per_kwh": {
+        "name": "Price per kWh"
+      },
+      "price_per_tonne": {
+        "name": "Average price per tonne"
+      },
+      "cost_month": {
+        "name": "Cost this month"
+      },
+      "cost_year": {
+        "name": "Cost this year"
+      },
+      "level_deviation": {
+        "name": "Difference to measured level"
+      }
+    }
+  },
+  "exceptions": {
+    "level_unavailable": {
+      "message": "The fill level sensor has no valid value right now."
     }
   }
 }
