@@ -32,7 +32,7 @@ const T = {
     consumption: "Consumption", cost: "Cost", avgDay: "Avg per day", energy: "Energy",
     back: "Back to", daysOf: "Days of", loading: "Loading …", noData: "No consumption recorded yet.",
     last12: "Last 12 months", kw: "CW", total: "Total consumption", capacity: "Capacity",
-    minStock: "Minimum stock", since: "Data since", pricePerTonne: "Ø price per tonne",
+    minStock: "Minimum stock", since: "Counting since", historyFrom: "History from HA statistics since", pricePerTonne: "Ø price per tonne",
     monthKg: "Used this month", costMonthLong: "Cost this month", costYearLong: "Cost this year", qty: "Amount", tapHint: "Tap a bar for details.", note: "Note",
     weeksOf: "Days of week",
   },
@@ -50,7 +50,7 @@ const T = {
     consumption: "Verbrauch", cost: "Kosten", avgDay: "Ø pro Tag", energy: "Energie",
     back: "Zurück zu", daysOf: "Tage im", loading: "Lädt …", noData: "Noch kein Verbrauch erfasst.",
     last12: "Letzte 12 Monate", kw: "KW", total: "Gesamtverbrauch", capacity: "Lagergröße",
-    minStock: "Mindestbestand", since: "Daten seit", pricePerTonne: "Ø Preis pro Tonne",
+    minStock: "Mindestbestand", since: "Zählt seit", historyFrom: "Verlauf aus HA-Statistik ab", pricePerTonne: "Ø Preis pro Tonne",
     monthKg: "Verbrauch diesen Monat", costMonthLong: "Kosten diesen Monat", costYearLong: "Kosten dieses Jahr", qty: "Menge", tapHint: "Tippe auf einen Balken für Details.", note: "Notiz",
     weeksOf: "Tage der KW",
   },
@@ -678,6 +678,7 @@ class PelletStockDialog extends HTMLElement {
       <div class="facts">
         <div><span>${t.total}</span><b>${f.num(k.total_kg)} kg</b></div>
         <div><span>${t.since}</span><b>${k.tracking_since ? f.date(k.tracking_since.slice(0, 10)) : "–"}</b></div>
+        ${k.history_from ? `<div><span>${t.historyFrom}</span><b>${f.date(k.history_from)}</b></div>` : ""}
       </div>`;
   }
 

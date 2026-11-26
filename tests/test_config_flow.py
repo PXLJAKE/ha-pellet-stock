@@ -46,6 +46,7 @@ async def test_full_flow_kg_counter_with_level_sensor(hass: HomeAssistant) -> No
     schema = result["data_schema"].schema
     defaults = {str(k): k.default() for k in schema}
     assert defaults["initial_stock_kg"] == 3000
+    assert defaults["import_history"] is True
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"initial_stock_kg": 3000, "initial_price_per_tonne": 420}
@@ -54,6 +55,7 @@ async def test_full_flow_kg_counter_with_level_sensor(hass: HomeAssistant) -> No
     assert result["title"] == "Pelletsilo"
     assert result["data"]["level_entity"] == "sensor.silo_level"
     assert result["data"]["source_type"] == "kg_counter"
+    assert result["data"]["import_history"] is True
 
 
 async def test_flow_energy_and_runtime_steps(hass: HomeAssistant) -> None:
@@ -82,6 +84,8 @@ async def test_flow_without_level_sensor(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"capacity_kg": 1000, "min_stock_percent": 15}
     )
+    # An on/off burner has no statistics, so there is nothing to take over.
+    assert "import_history" not in {str(k) for k in result["data_schema"].schema}
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"initial_stock_kg": 500, "initial_price_per_tonne": 0}
     )

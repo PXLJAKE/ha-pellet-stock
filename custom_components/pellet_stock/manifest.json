@@ -2,7 +2,8 @@
   "domain": "pellet_stock",
   "name": "Pellet Stock Manager",
   "after_dependencies": [
-    "frontend"
+    "frontend",
+    "recorder"
   ],
   "categories": [
     "energy.meters_monitoring",

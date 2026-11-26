@@ -23,6 +23,7 @@ from .const import (
     CONF_CALORIFIC_VALUE,
     CONF_CAPACITY_KG,
     CONF_EFFICIENCY,
+    CONF_IMPORT_HISTORY,
     CONF_INITIAL_PRICE_PER_TONNE,
     CONF_INITIAL_STOCK_KG,
     CONF_KG_PER_HOUR,
@@ -244,6 +245,12 @@ class PelletStockConfigFlow(ConfigFlow, domain=DOMAIN):
             self._data.update(user_input)
             return self.async_create_entry(title=self._data[CONF_NAME], data=self._data)
 
+        history: dict[Any, Any] = {}
+        if self._data[CONF_SOURCE_ENTITY].startswith("sensor."):
+            # Only sensors have long-term statistics.
+            history[vol.Required(CONF_IMPORT_HISTORY, default=True)] = (
+                selector.BooleanSelector()
+            )
         stock_default = 0.0
         if level_entity := self._data.get(CONF_LEVEL_ENTITY):
             stock_default = self._level_default(level_entity)
@@ -257,6 +264,7 @@ class PelletStockConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(
                         CONF_INITIAL_PRICE_PER_TONNE, default=DEFAULT_PRICE_PER_TONNE
                     ): _number(0, 5000, 0.01, f"{self.hass.config.currency}/t"),
+                    **history,
                 }
             ),
         )

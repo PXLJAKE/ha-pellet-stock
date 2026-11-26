@@ -78,11 +78,13 @@
         "description": "What is in the storage today? From now on, consumption is subtracted automatically and deliveries are added.",
         "data": {
           "initial_stock_kg": "Current stock",
-          "initial_price_per_tonne": "Price per tonne"
+          "initial_price_per_tonne": "Price per tonne",
+          "import_history": "Take over history from Home Assistant"
         },
         "data_description": {
           "initial_stock_kg": "Your best estimate. If you chose a fill level sensor, its value is suggested. You can correct it later.",
-          "initial_price_per_tonne": "What you paid for these pellets, including delivery. Used for costs and price per kWh. 0 = unknown."
+          "initial_price_per_tonne": "What you paid for these pellets, including delivery. Used for costs and price per kWh. 0 = unknown.",
+          "import_history": "Reads past daily consumption from the long-term statistics of the sensor, so the charts are filled from the first day. The stock is not changed. Costs of these days use the price above."
         }
       }
     },
@@ -238,6 +240,9 @@
     },
     "unknown_delivery": {
       "message": "No delivery with this ID. You find the IDs in the attributes of the \"Last delivery\" sensor."
+    },
+    "history_already_imported": {
+      "message": "The history was already taken over (from {first_day})."
     }
   },
   "services": {
@@ -292,6 +297,16 @@
         "delivery_id": {
           "name": "Delivery ID",
           "description": "ID from the attributes of the \"Last delivery\" sensor."
+        }
+      }
+    },
+    "import_history": {
+      "name": "Take over history",
+      "description": "Fills the history once with past daily consumption from the long-term statistics of the source sensor. The stock is not changed.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Storage",
+          "description": "The pellet storage to fill."
         }
       }
     }

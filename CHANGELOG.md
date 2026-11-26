@@ -34,6 +34,12 @@ All notable changes are listed here. The format follows
   tooltips, tables and yearly totals. Optional 12-month chart in the card.
   Data comes on demand over the WebSocket command `pellet_stock/data`, so
   no history is stored in the recorder. The card is about 13 KB gzipped.
+- Take over past consumption from the Home Assistant long-term statistics of
+  the source sensor: an option in the setup assistant (on by default for
+  sensors) and the action `import_history`. Running totals use the daily
+  change, daily resetting counters the daily maximum. The stock is not
+  changed, costs of these days use the average price, and the range can use
+  the imported days right away. Runs only once per storage.
 - Icon set for all entities and actions, brand icon (light and dark) shipped
   with the integration, integration categories in the manifest.
 - README with installation, setup, entities, actions, automation example and

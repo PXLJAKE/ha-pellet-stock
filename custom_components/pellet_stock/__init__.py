@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN
+from .const import CONF_IMPORT_HISTORY, DOMAIN
 from .frontend import async_register_card
 from .manager import PelletStockManager
 from .services import async_setup_services
@@ -40,6 +40,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: PelletStockConfigEntry) 
     entry.runtime_data = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     manager.async_start()
+    if entry.data.get(CONF_IMPORT_HISTORY) and not manager.model.history_checked:
+        # Once, right after setup: fill the charts from the HA statistics.
+        manager.model.history_checked = True
+        entry.async_create_background_task(
+            hass, manager.async_import_history(), f"{DOMAIN}_import_history"
+        )
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 

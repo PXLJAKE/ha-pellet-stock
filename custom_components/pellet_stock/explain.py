@@ -56,6 +56,20 @@ _TEXTS: dict[str, dict[str, str]] = {
             "Home Assistant wurde neu gestartet, während der Brenner lief. Die "
             "Zeit, in der Home Assistant aus war, wird nicht gezählt."
         ),
+        "history_imported": (
+            "{days:.0f} Tage ({kg:.0f} kg) aus der Home-Assistant-Statistik "
+            "übernommen. Die Kosten dieser Tage sind mit dem Durchschnittspreis "
+            "von {price:.2f} pro Tonne gerechnet, weil alte Preise nicht bekannt "
+            "sind. Der Bestand wurde nicht verändert."
+        ),
+        "history_no_statistics": (
+            "Für den Sensor gibt es keine Langzeitstatistik in Home Assistant, "
+            "deshalb wurde kein Verlauf übernommen."
+        ),
+        "history_not_sensor": (
+            "Ein Ein/Aus-Brennerzustand hat keine Langzeitstatistik, deshalb "
+            "wurde kein Verlauf übernommen."
+        ),
     },
     "en": {
         "range_full_days": (
@@ -96,6 +110,19 @@ _TEXTS: dict[str, dict[str, str]] = {
         "source_burner_restart": (
             "Home Assistant restarted while the burner was running. The time "
             "Home Assistant was off is not counted."
+        ),
+        "history_imported": (
+            "Took over {days:.0f} days ({kg:.0f} kg) from the Home Assistant "
+            "statistics. Their cost uses the average price of {price:.2f} per "
+            "tonne, because older prices are not known. The stock was not changed."
+        ),
+        "history_no_statistics": (
+            "There are no long-term statistics for the sensor in Home Assistant, "
+            "so no history was taken over."
+        ),
+        "history_not_sensor": (
+            "An on/off burner state has no long-term statistics, so no history "
+            "was taken over."
         ),
     },
 }

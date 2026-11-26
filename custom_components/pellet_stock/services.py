@@ -31,6 +31,7 @@ ATTR_DELIVERY_ID = "delivery_id"
 SERVICE_ADD_DELIVERY = "add_delivery"
 SERVICE_CORRECT_STOCK = "correct_stock"
 SERVICE_DELETE_DELIVERY = "delete_delivery"
+SERVICE_IMPORT_HISTORY = "import_history"
 
 # Same upper limit as the storage capacity in the setup assistant.
 MAX_KG = 100_000
@@ -110,6 +111,24 @@ def async_setup_services(hass: HomeAssistant) -> None:
         }
         return result
 
+    async def import_history(call: ServiceCall) -> ServiceResponse:
+        manager = _manager(hass, call)
+        result = await manager.async_import_history()
+        if result.status == "already_imported":
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="history_already_imported",
+                translation_placeholders={"first_day": result.first_day or ""},
+            )
+        return result.as_dict()
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_HISTORY,
+        import_history,
+        schema=vol.Schema(_ENTRY),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_ADD_DELIVERY,

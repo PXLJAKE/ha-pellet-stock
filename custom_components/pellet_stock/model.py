@@ -98,6 +98,8 @@ class StockModel:
     counter: CounterTracker = field(default_factory=CounterTracker)
     runtime_on_since: str | None = None  # ISO datetime while the burner runs
     source_key: str = ""  # identifies the source setup the counter baseline belongs to
+    history_from: str = ""  # first day taken over from the HA statistics (ISO date)
+    history_checked: bool = False  # the automatic import after setup has run
 
     # ----- changes -----
 
@@ -117,6 +119,26 @@ class StockModel:
         self.kg_by_month[month] = self.kg_by_month.get(month, 0.0) + kg
         self.cost_by_month[month] = self.cost_by_month.get(month, 0.0) + cost
         self.cost_by_year[year] = self.cost_by_year.get(year, 0.0) + cost
+
+    def import_day(self, day: date, kg: float, keep_daily: bool) -> None:
+        """Add consumption of a past day taken from the HA statistics.
+
+        Only the history is filled; the stock is not touched. The cost uses
+        the current average price, because older prices are not known.
+        """
+        if kg <= 0:
+            return
+        key = day.isoformat()
+        cost = kg * self.avg_price_per_kg
+        if keep_daily:
+            self.daily_kg[key] = self.daily_kg.get(key, 0.0) + kg
+            self.daily_cost[key] = self.daily_cost.get(key, 0.0) + cost
+        month, year = key[:7], key[:4]
+        self.kg_by_month[month] = self.kg_by_month.get(month, 0.0) + kg
+        self.cost_by_month[month] = self.cost_by_month.get(month, 0.0) + cost
+        self.cost_by_year[year] = self.cost_by_year.get(year, 0.0) + cost
+        if not self.history_from or key < self.history_from:
+            self.history_from = key
 
     def add_delivery(
         self, kg: float, price_total: float, day: date, note: str = ""
@@ -196,6 +218,12 @@ class StockModel:
         start = (
             datetime.fromisoformat(self.tracking_since) if self.tracking_since else now
         )
+        if self.history_from:
+            # Days taken over from the HA statistics count as full days.
+            history_start = datetime.combine(
+                date.fromisoformat(self.history_from), datetime.min.time(), now.tzinfo
+            )
+            start = min(start, history_start)
         first_full_day = start.date() + timedelta(days=1)
         if start.time() == datetime.min.time():
             first_full_day = start.date()
