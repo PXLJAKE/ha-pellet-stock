@@ -1,8 +1,16 @@
 {
   "domain": "pellet_stock",
   "name": "Pellet Stock Manager",
-  "codeowners": ["@PXLJAKE"],
+  "after_dependencies": [
+    "frontend"
+  ],
+  "codeowners": [
+    "@PXLJAKE"
+  ],
   "config_flow": true,
+  "dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/PXLJAKE/ha-pellet-stock",
   "integration_type": "service",
   "iot_class": "calculated",
