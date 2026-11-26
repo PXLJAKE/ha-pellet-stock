@@ -51,8 +51,7 @@ Die drei Quellen:
 Home Assistant führt für Sensoren mit Zustandsklasse eine Langzeitstatistik. Sie wird einmal gelesen und in Tagesverbrauch umgerechnet:
 
 - Sensoren mit Gesamtzähler: Die Änderung pro Tag ist der Verbrauch.
-- Tageszähler, die um Mitternacht auf 0 springen: Der höchste Wert des Tages ist der Verbrauch.
-- Andere Messwerte: höchster minus niedrigster Wert des Tages.
+- Andere Sensoren, etwa Tageszähler, die um Mitternacht auf 0 springen: Die Stundenwerte werden wie ein Zähler verfolgt. Jeder Anstieg ist Verbrauch, und ein Abfall ist ein Zurücksetzen.
 
 Tage mit mehr als 500 kg gelten als fehlerhaft und werden übersprungen. Es werden bis zu zehn Jahre gelesen. Tageswerte bleiben für die letzten 400 Tage erhalten, ältere Tage zählen nur in den Monats- und Jahressummen. Die Kosten der übernommenen Tage werden mit deinem Durchschnittspreis gerechnet, weil alte Preise nicht bekannt sind.
 

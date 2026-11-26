@@ -7,6 +7,7 @@ delay so frequent sensor updates do not wear out SD cards.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -113,6 +114,7 @@ class PelletStockManager:
         )
         self._listeners: list[Callable[[], None]] = []
         self._unsubs: list[CALLBACK_TYPE] = []
+        self._import_lock = asyncio.Lock()
 
     # ----- configuration helpers -----
 
@@ -409,9 +411,18 @@ class PelletStockManager:
 
     # ----- history from the HA statistics -----
 
-    async def async_import_history(self) -> ImportResult:
-        """Fill the history once from the long-term statistics of the source."""
-        result = await async_import_history(self)
+    async def async_import_history(self, replace: bool = False) -> ImportResult:
+        """Fill the history once from the long-term statistics of the source.
+
+        With replace, what an earlier import added is taken out first.
+        """
+        async with self._import_lock:
+            if replace:
+                self.model.clear_import()
+            result = await async_import_history(self)
+        if replace and result.status != "imported":
+            self._changed(save=False)
+            await self._store.async_save(self.model.to_dict())
         now = dt_util.now()
         if result.status == "imported":
             self._decide(

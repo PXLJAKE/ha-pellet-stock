@@ -7,9 +7,11 @@ stock is not changed.
 
 - Counters with a running total (state class total / total_increasing):
   the daily change is the consumption.
-- Counters that reset every day but are recorded as measurement (like many
-  boiler integrations): the highest value of the day is the consumption.
-- Other measurements: highest minus lowest value of the day.
+- Sensors recorded as measurement (like the daily counters of many boiler
+  integrations): the hourly lowest and highest values are followed like a
+  counter. Every rise is consumption, and a drop is a reset. The daily
+  highest value alone would be wrong: in the first hour after midnight it
+  still holds the total of the day before.
 """
 
 from __future__ import annotations
@@ -48,7 +50,7 @@ class ImportResult:
     days: int = 0
     kg: float = 0.0
     first_day: str | None = None
-    method: str = ""  # "change", "daily_max", "max_minus_min"
+    method: str = ""  # "change" (running total) or "hourly" (measurement)
 
     def as_dict(self) -> dict[str, Any]:
         """Return the result as a service response."""
@@ -61,46 +63,99 @@ class ImportResult:
         }
 
 
-def _daily_kg(
-    row: dict[str, Any], has_sum: bool, max_step: float
-) -> tuple[float | None, str]:
-    """Return the consumption of one day in source units and the method used."""
+# One hour of statistics: local start, lowest and highest value.
+type HourRow = tuple[datetime, float, float]
+
+
+def hourly_to_daily(rows: list[HourRow]) -> dict[date, float]:
+    """Follow hourly lowest/highest values like a counter, summed per day.
+
+    Without a reset, a counter ends the hour at its highest value. In an hour
+    with a reset (the lowest value is at most half of where the hour before
+    ended), the highest value may still be the old total, so the value after
+    the reset is taken from the lowest value of the next hour.
+    """
+    daily: dict[date, float] = {}
+    previous_end: float | None = None
+    for index, (start, low, high) in enumerate(rows):
+        next_low: float | None = None
+        if index + 1 < len(rows) and rows[index + 1][0] - start == timedelta(hours=1):
+            next_low = rows[index + 1][1]
+        after = min(next_low, high) if next_low is not None else None
+        if previous_end is None:
+            # First hour: only the rise that is certain.
+            end = after if after is not None else high
+            gain = end - low
+        elif previous_end > 0 and low <= previous_end / 2:
+            # Reset in this hour.
+            end = after
+            if end is None:
+                end = low if high >= previous_end else high
+            before_reset = max(0.0, high - previous_end) if end < high else 0.0
+            gain = before_reset + end
+        else:
+            end = high
+            gain = high - previous_end
+        if gain > 0:
+            day = start.date()
+            daily[day] = daily.get(day, 0.0) + gain
+        previous_end = end
+    return daily
+
+
+def _read_days(
+    hass: HomeAssistant, statistic_id: str, first_tracked_day: date, has_sum: bool
+) -> dict[date, float]:
+    """Read the statistics and return the consumption per day (executor)."""
+    end = dt_util.start_of_local_day(first_tracked_day + timedelta(days=1))
+    oldest = end - timedelta(days=365 * MAX_YEARS)
     if has_sum:
-        return row.get("change"), "change"
-    high, low = row.get("max"), row.get("min")
-    if high is None:
-        return None, ""
-    if low is not None and low > max_step:
-        # Never close to zero on this day: not a daily counter.
-        return high - low, "max_minus_min"
-    return high, "daily_max"
+        rows = statistics_during_period(
+            hass, oldest, end, {statistic_id}, "day", None, {"change"}
+        ).get(statistic_id, [])
+        return {
+            dt_util.as_local(dt_util.utc_from_timestamp(row["start"])).date(): change
+            for row in rows
+            if (change := row.get("change")) is not None
+        }
+    hours: list[HourRow] = []
+    start = oldest
+    while start < end:
+        # A year at a time keeps the memory use low on small machines.
+        stop = min(end, start + timedelta(days=365))
+        for row in statistics_during_period(
+            hass, start, stop, {statistic_id}, "hour", None, {"max", "min"}
+        ).get(statistic_id, []):
+            if row.get("min") is not None and row.get("max") is not None:
+                hours.append(
+                    (
+                        dt_util.as_local(dt_util.utc_from_timestamp(row["start"])),
+                        row["min"],
+                        row["max"],
+                    )
+                )
+        start = stop
+    return hourly_to_daily(hours)
 
 
-async def _async_daily_rows(
+async def _async_daily_values(
     hass: HomeAssistant, statistic_id: str, first_tracked_day: date
-) -> tuple[list[dict[str, Any]], bool, str | None]:
-    """Return the daily statistics rows, whether they have a sum, and the unit."""
+) -> tuple[dict[date, float], str, str | None]:
+    """Return the consumption per day in source units, the method and the unit."""
     if "recorder" not in hass.config.components:
-        return [], False, None
+        return {}, "", None
     recorder = get_instance(hass)
     metadata = await recorder.async_add_executor_job(
         lambda: get_metadata(hass, statistic_ids={statistic_id})
     )
     if statistic_id not in metadata:
-        return [], False, None
+        return {}, "", None
     meta = metadata[statistic_id][1]
     has_sum = bool(meta["has_sum"])
-    start = dt_util.start_of_local_day(
-        first_tracked_day - timedelta(days=365 * MAX_YEARS)
+    days = await recorder.async_add_executor_job(
+        _read_days, hass, statistic_id, first_tracked_day, has_sum
     )
-    end = dt_util.start_of_local_day(first_tracked_day + timedelta(days=1))
-    types: set[Any] = {"change"} if has_sum else {"max", "min"}
-    rows = await recorder.async_add_executor_job(
-        lambda: statistics_during_period(
-            hass, start, end, {statistic_id}, "day", None, types
-        )
-    )
-    return list(rows.get(statistic_id, [])), has_sum, meta["unit_of_measurement"]
+    return days, "change" if has_sum else "hourly", meta["unit_of_measurement"]
 
 
 async def async_import_history(manager: PelletStockManager) -> ImportResult:
@@ -118,7 +173,7 @@ async def async_import_history(manager: PelletStockManager) -> ImportResult:
         else dt_util.now()
     )
     first_tracked_day = started.date()
-    daily, has_sum, unit = await _async_daily_rows(
+    daily, method, unit = await _async_daily_values(
         manager.hass, statistic_id, first_tracked_day
     )
     if not daily:
@@ -126,13 +181,10 @@ async def async_import_history(manager: PelletStockManager) -> ImportResult:
 
     today = dt_util.now().date()
     keep_from = today - timedelta(days=HISTORY_DAYS)
-    result = ImportResult("imported")
-    for row in daily:
-        day = dt_util.as_local(dt_util.utc_from_timestamp(row["start"])).date()
-        if day > first_tracked_day:
-            continue
-        value, method = _daily_kg(row, has_sum, manager.max_step_kg)
-        if value is None or value <= 0:
+    result = ImportResult("imported", method=method)
+    for day in sorted(daily):
+        value = daily[day]
+        if day > first_tracked_day or value <= 0:
             continue
         kg = manager.value_to_kg(value, unit)
         if day == first_tracked_day:
@@ -143,7 +195,6 @@ async def async_import_history(manager: PelletStockManager) -> ImportResult:
         model.import_day(day, kg, keep_daily=day >= keep_from)
         result.days += 1
         result.kg += kg
-        result.method = result.method or method
     if not result.days:
         return ImportResult("no_statistics")
     result.first_day = model.history_from

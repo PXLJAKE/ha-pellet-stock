@@ -51,8 +51,7 @@ The three sources:
 Home Assistant keeps long-term statistics for sensors with a state class. The import reads them once and turns them into daily consumption:
 
 - Sensors with a running total: the daily change is the consumption.
-- Daily counters that reset at midnight: the highest value of the day is the consumption.
-- Other measurements: the highest minus the lowest value of the day.
+- Other sensors, such as daily counters that reset at midnight: the hourly values are followed like a counter. Every rise is consumption, and a drop is a reset.
 
 Days with more than 500 kg are treated as faulty and skipped. Up to ten years are read. Daily values are kept for the last 400 days; older days only count in the monthly and yearly totals. The cost of imported days uses your average price, because older prices are not known.
 

@@ -47,7 +47,7 @@ If you also enter deliveries on the boiler itself, nothing is counted twice. The
 | `pellet_stock.add_delivery` | `config_entry_id`, `kg`, `price` (what the whole delivery cost, optional), `date` (optional, today if empty), `note` (optional) |
 | `pellet_stock.correct_stock` | `config_entry_id`, `stock_kg` (what is really in the storage now) |
 | `pellet_stock.delete_delivery` | `config_entry_id`, `delivery_id` (from the attributes of *Last delivery*) |
-| `pellet_stock.import_history` | `config_entry_id`. Takes over past daily consumption from the statistics, once per storage |
+| `pellet_stock.import_history` | `config_entry_id`, `replace` (optional). Takes over past daily consumption from the statistics, once per storage. With `replace`, an earlier import is removed and read again |
 
 Each action returns a response, for example the new stock. You find them under **Developer tools → Actions**, where you pick the storage from a list.
 

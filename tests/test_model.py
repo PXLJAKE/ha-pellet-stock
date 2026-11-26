@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+import json
 
 import pytest
 
 from custom_components.pellet_stock.model import CounterTracker, StockModel
+
+NOW = datetime(2026, 11, 26, 18, 0).astimezone()
 
 
 def test_counter_daily_reset_like_oekofen() -> None:
@@ -188,3 +191,57 @@ def test_analysis_months_years_days_weeks() -> None:
     assert weeks[1]["kg"] == 20.0
     assert len(weeks[1]["days"]) == 7
     assert weeks[1]["days"][2] == {"period": "2025-12-31", "kg": 10.0, "cost": 5.0}
+
+
+def test_store_round_trip_keeps_every_field() -> None:
+    """Nothing may get lost between saving and loading."""
+    model = StockModel(
+        stock_kg=5000, avg_price_per_kg=0.4, tracking_since=NOW.isoformat()
+    )
+    model.consume(3.0, NOW)
+    model.import_day(date(2026, 1, 5), 20.0, keep_daily=True)
+    model.import_day(date(2024, 1, 5), 10.0, keep_daily=False)
+    model.history_checked = True
+    restored = StockModel.from_dict(json.loads(json.dumps(model.to_dict())))
+    assert restored.to_dict() == model.to_dict()
+    assert restored.history_from == "2024-01-05"
+    assert restored.history_checked
+
+
+def test_clear_import_leaves_counted_consumption() -> None:
+    """Taking the import out again restores exactly what was counted."""
+    model = StockModel(
+        stock_kg=5000, avg_price_per_kg=0.4, tracking_since=NOW.isoformat()
+    )
+    model.consume(3.0, NOW)
+    counted = model.to_dict()
+    model.import_day(NOW.date(), 12.0, keep_daily=True)
+    model.import_day(date(2024, 1, 5), 10.0, keep_daily=False)
+    model.clear_import()
+    after = model.to_dict()
+    for key in ("daily_kg", "kg_by_month", "history_from", "import_by_month"):
+        assert after[key] == counted[key]
+    for key in ("daily_cost", "cost_by_month", "cost_by_year"):
+        assert after[key] == pytest.approx(counted[key])
+
+
+def test_data_of_version_0_2_0_is_repaired() -> None:
+    """History that 0.2.0 added several times is dropped and marked for a new import."""
+    model = StockModel(
+        stock_kg=5000, avg_price_per_kg=0.4, tracking_since=NOW.isoformat()
+    )
+    model.consume(3.0, NOW)
+    for _ in range(3):  # the same import, added on three starts
+        model.import_day(NOW.date(), 30.0, keep_daily=True)
+        model.import_day(NOW.date() - timedelta(days=1), 29.0, keep_daily=True)
+        model.import_day(date(2025, 3, 1), 10.0, keep_daily=False)
+    data = model.to_dict()
+    del data["import_by_day"], data["import_by_month"], data["history_redo"]
+
+    restored = StockModel.from_dict(data)
+    assert restored.daily_kg == {NOW.date().isoformat(): pytest.approx(3.0)}
+    assert sum(restored.kg_by_month.values()) == pytest.approx(3.0)
+    assert sum(restored.cost_by_year.values()) == pytest.approx(1.2)
+    assert restored.history_from == ""
+    assert restored.history_redo
+    assert restored.stock_kg == model.stock_kg

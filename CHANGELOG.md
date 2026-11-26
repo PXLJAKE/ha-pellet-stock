@@ -6,8 +6,24 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-26
+
+### Fixed
+
+- The history taken over from the Home Assistant statistics was added again
+  on every restart and every change of the settings, so consumption and cost
+  were shown two or three times too high. It is now taken over once. Data
+  written by 0.2.0 is repaired automatically on the first start: the history
+  is removed and read again. The stock was never affected.
+- Daily counters that reset at midnight: a day with less consumption than the
+  day before got the total of the day before, because the daily highest value
+  still contains it in the first hour after midnight. The import now follows
+  the hourly values like a counter.
+
 ### Added
 
+- `import_history` has a new option `replace` that removes what an earlier
+  import added and reads the statistics again.
 - Documentation site in English and German (MkDocs), attached to every full
   release as `ha-pellet-stock-docs-<version>.zip`.
 
@@ -68,5 +84,6 @@ All notable changes are listed here. The format follows
   diagnostics with redacted free text, German and English texts, tests, CI
   (ruff, pytest, hassfest, HACS validation) and Dependabot.
 
-[Unreleased]: https://github.com/PXLJAKE/ha-pellet-stock/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/PXLJAKE/ha-pellet-stock/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/PXLJAKE/ha-pellet-stock/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/PXLJAKE/ha-pellet-stock/releases/tag/v0.2.0

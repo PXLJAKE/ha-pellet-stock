@@ -67,3 +67,8 @@ import_history:
       selector:
         config_entry:
           integration: pellet_stock
+    replace:
+      required: false
+      default: false
+      selector:
+        boolean:

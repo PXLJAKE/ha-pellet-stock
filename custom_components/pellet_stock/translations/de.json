@@ -307,6 +307,10 @@
         "config_entry_id": {
           "name": "Lager",
           "description": "Das Pelletlager, das gefüllt werden soll."
+        },
+        "replace": {
+          "name": "Neu einlesen",
+          "description": "Entfernt, was eine frühere Übernahme eingetragen hat, und liest die Statistik neu. Nimm das, wenn die übernommenen Werte nicht stimmen. Selbst gezählter Verbrauch bleibt erhalten."
         }
       }
     }
