@@ -1,0 +1,69 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "low_stock": {
+        "default": "mdi:silo-outline",
+        "state": {
+          "on": "mdi:alert"
+        }
+      }
+    },
+    "button": {
+      "adopt_level": {
+        "default": "mdi:scale"
+      }
+    },
+    "sensor": {
+      "stock": {
+        "default": "mdi:silo"
+      },
+      "fill_level": {
+        "default": "mdi:gauge"
+      },
+      "range": {
+        "default": "mdi:calendar-clock"
+      },
+      "avg_daily_consumption": {
+        "default": "mdi:chart-line"
+      },
+      "consumption_today": {
+        "default": "mdi:fire"
+      },
+      "consumption_total": {
+        "default": "mdi:counter"
+      },
+      "energy_total": {
+        "default": "mdi:lightning-bolt"
+      },
+      "price_per_kwh": {
+        "default": "mdi:tag"
+      },
+      "price_per_tonne": {
+        "default": "mdi:tag-outline"
+      },
+      "cost_month": {
+        "default": "mdi:cash"
+      },
+      "cost_year": {
+        "default": "mdi:cash-multiple"
+      },
+      "last_delivery": {
+        "default": "mdi:truck-delivery"
+      },
+      "level_deviation": {
+        "default": "mdi:scale-unbalanced"
+      }
+    }
+  },
+  "services": {
+    "add_delivery": {
+      "service": "mdi:truck-delivery"
+    },
+    "correct_stock": {
+      "service": "mdi:pencil"
+    },
+    "delete_delivery": {
+      "service": "mdi:delete"
+    }
+  }
+}
