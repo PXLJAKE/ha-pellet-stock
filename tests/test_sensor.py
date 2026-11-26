@@ -154,6 +154,29 @@ async def test_runtime_source_counts_burner_hours(
     assert _state(hass, "gesamtverbrauch") == "3.0"
 
 
+async def test_runtime_restart_does_not_count_downtime(
+    hass: HomeAssistant, entry_data, freezer: FrozenDateTimeFactory
+) -> None:
+    """A burner run open across a restart does not count the time HA was off."""
+    entry_data.update(
+        source_type="runtime", source_entity="binary_sensor.burner", kg_per_hour=2.0
+    )
+    entry = MockConfigEntry(domain=DOMAIN, title="Pelletsilo", data=entry_data)
+    hass.states.async_set("binary_sensor.burner", "on")
+    await _setup(hass, entry)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Ten hours later HA is back and the burner is off.
+    freezer.tick(timedelta(hours=10))
+    hass.states.async_set("binary_sensor.burner", "off")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _state(hass, "gesamtverbrauch") == "0.0"
+    reason = hass.states.get("sensor.pelletsilo_gesamtverbrauch").attributes["reason"]
+    assert "neu gestartet" in reason
+
+
 async def test_energy_source_converts_kwh(hass: HomeAssistant, entry_data) -> None:
     """kWh are turned into kg with calorific value and efficiency."""
     entry_data.update(

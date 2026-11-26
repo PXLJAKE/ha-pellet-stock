@@ -52,6 +52,10 @@ _TEXTS: dict[str, dict[str, str]] = {
         "source_burner_on": "Brenner läuft, Verbrauch wird beim Ausschalten gezählt.",
         "source_burner_off": "Brenner lief {hours:.2f} h, {kg:.2f} kg gezählt.",
         "source_unavailable": "Sensor nicht verfügbar, nichts gezählt.",
+        "source_burner_restart": (
+            "Home Assistant wurde neu gestartet, während der Brenner lief. Die "
+            "Zeit, in der Home Assistant aus war, wird nicht gezählt."
+        ),
     },
     "en": {
         "range_full_days": (
@@ -89,6 +93,10 @@ _TEXTS: dict[str, dict[str, str]] = {
         "source_burner_on": "Burner is running, use is counted when it stops.",
         "source_burner_off": "Burner ran {hours:.2f} h, counted {kg:.2f} kg.",
         "source_unavailable": "Sensor unavailable, nothing counted.",
+        "source_burner_restart": (
+            "Home Assistant restarted while the burner was running. The time "
+            "Home Assistant was off is not counted."
+        ),
     },
 }
 

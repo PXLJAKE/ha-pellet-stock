@@ -29,7 +29,7 @@ const T = {
     rangeUnknown: "not yet known", close: "Close", details: "Show details",
     tabOverview: "Overview", tabMonths: "Months", tabWeeks: "Weeks", tabDeliveries: "Deliveries",
     month: "Month", week: "Week", day: "Day", year: "Year", years: "Years",
-    consumption: "Consumption", cost: "Cost", avgDay: "Ø per day", energy: "Energy",
+    consumption: "Consumption", cost: "Cost", avgDay: "Avg per day", energy: "Energy",
     back: "Back to", daysOf: "Days of", loading: "Loading …", noData: "No consumption recorded yet.",
     last12: "Last 12 months", kw: "CW", total: "Total consumption", capacity: "Capacity",
     minStock: "Minimum stock", since: "Data since", pricePerTonne: "Ø price per tonne",

@@ -34,6 +34,17 @@ All notable changes are listed here. The format follows
   tooltips, tables and yearly totals. Optional 12-month chart in the card.
   Data comes on demand over the WebSocket command `pellet_stock/data`, so
   no history is stored in the recorder. The card is about 13 KB gzipped.
+- Icon set for all entities and actions, brand icon (light and dark) shipped
+  with the integration, integration categories in the manifest.
+- README with installation, setup, entities, actions, automation example and
+  screenshots.
+
+### Fixed
+
+- Burner runtime source: a run that was still open when Home Assistant
+  restarted no longer counts the time Home Assistant was off. The "Why?"
+  text says so.
+- Actions reject amounts, stock and prices above 100,000.
 - Plain-language "reason" attributes (German/English) for range, minimum stock
   and every decision about the consumption sensor.
 - Project scaffold: integration skeleton with a setup assistant (name only),

@@ -201,8 +201,15 @@ class PelletStockManager:
                 self.hass, self._on_midnight, hour=0, minute=0, second=10
             )
         )
+        state = self.hass.states.get(source)
+        if self.source_type == SOURCE_RUNTIME and self.model.runtime_on_since:
+            # A burner run that was open before the restart: the time while
+            # Home Assistant was down is unknown, so it is not counted.
+            self.model.runtime_on_since = None
+            if state is None or state.state != STATE_ON:
+                self._decide("source_burner_restart", dt_util.now())
         # Take the current value as baseline (or continue from the stored one).
-        if (state := self.hass.states.get(source)) is not None:
+        if state is not None:
             self._handle_source_state(state, None)
 
     async def async_stop(self) -> None:

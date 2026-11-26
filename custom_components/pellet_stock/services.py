@@ -32,14 +32,19 @@ SERVICE_ADD_DELIVERY = "add_delivery"
 SERVICE_CORRECT_STOCK = "correct_stock"
 SERVICE_DELETE_DELIVERY = "delete_delivery"
 
+# Same upper limit as the storage capacity in the setup assistant.
+MAX_KG = 100_000
+
 _ENTRY = {vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string}
 
 ADD_DELIVERY_SCHEMA = vol.Schema(
     {
         **_ENTRY,
-        vol.Required(ATTR_KG): vol.All(vol.Coerce(float), vol.Range(min=0.1)),
+        vol.Required(ATTR_KG): vol.All(
+            vol.Coerce(float), vol.Range(min=0.1, max=MAX_KG)
+        ),
         vol.Optional(ATTR_PRICE, default=0.0): vol.All(
-            vol.Coerce(float), vol.Range(min=0)
+            vol.Coerce(float), vol.Range(min=0, max=100_000)
         ),
         vol.Optional(ATTR_DATE): cv.date,
         vol.Optional(ATTR_NOTE, default=""): vol.All(cv.string, vol.Length(max=200)),
@@ -48,7 +53,9 @@ ADD_DELIVERY_SCHEMA = vol.Schema(
 CORRECT_STOCK_SCHEMA = vol.Schema(
     {
         **_ENTRY,
-        vol.Required(ATTR_STOCK_KG): vol.All(vol.Coerce(float), vol.Range(min=0)),
+        vol.Required(ATTR_STOCK_KG): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=MAX_KG)
+        ),
     }
 )
 DELETE_DELIVERY_SCHEMA = vol.Schema(
