@@ -1,0 +1,30 @@
+[project]
+name = "ha-pellet-stock"
+version = "0.1.0"
+description = "Home Assistant integration for pellet stock, consumption, range and cost"
+license = "Apache-2.0"
+requires-python = ">=3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["custom_components.pellet_stock"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "ASYNC", "RUF", "PL", "D"]
+ignore = ["D203", "D213", "PLR2004", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components"]
+force-sort-within-sections = true
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "PLR0913"]
